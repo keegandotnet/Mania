@@ -28,12 +28,6 @@ export default async function PlayPage() {
         revealedDetail: null,
       };
 
-  // If a round is already revealed when the player navigates to /play,
-  // send them to /results so they see scores before continuing.
-  if (initialState.round?.status === "revealed") {
-    redirect("/results");
-  }
-
   return (
     <main className="mx-auto flex max-w-lg flex-col gap-8 px-6 py-16">
       <h1 className="text-2xl font-semibold tracking-tight">Play</h1>
