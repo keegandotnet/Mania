@@ -14,16 +14,17 @@ function averageRating(reviews: { rating: number }[]): number | null {
   return Math.round((sum / reviews.length) * 10) / 10;
 }
 
-function ratingColor(score: number): string {
-  if (score >= 8) return "text-emerald-600 dark:text-emerald-400";
-  if (score >= 6) return "text-amber-500 dark:text-amber-400";
-  return "text-red-500 dark:text-red-400";
+/** Inline fallbacks — survives stale CSS where Tailwind utilities do not apply. */
+function ratingTextColor(score: number): string {
+  if (score >= 8) return "#059669";
+  if (score >= 6) return "#d97706";
+  return "#ef4444";
 }
 
-function ratingBg(score: number): string {
-  if (score >= 8) return "bg-emerald-500";
-  if (score >= 6) return "bg-amber-400";
-  return "bg-red-400";
+function ratingBarFillColor(score: number): string {
+  if (score >= 8) return "#10b981";
+  if (score >= 6) return "#fbbf24";
+  return "#f87171";
 }
 
 type Props = { data: GameResultsData };
@@ -116,7 +117,13 @@ export function ResultsView({ data }: Props) {
                               Round {round.roundNumber}
                             </span>
                             {isBest && (
-                              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                              <span
+                                className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                                style={{
+                                  backgroundColor: "rgba(254, 243, 199, 1)",
+                                  color: "#b45309",
+                                }}
+                              >
                                 🏆 Top pick
                               </span>
                             )}
@@ -152,8 +159,20 @@ export function ResultsView({ data }: Props) {
 
                         {/* Average score badge */}
                         {avg != null ? (
-                          <div className="flex flex-col items-center rounded-lg border border-black/10 px-3 py-1.5 dark:border-white/15">
-                            <span className={`text-2xl font-bold tabular-nums ${ratingColor(avg)}`}>
+                          <div
+                            className="flex flex-col items-center rounded-lg border px-3 py-1.5"
+                            style={{
+                              borderColor: "rgba(0, 0, 0, 0.1)",
+                              boxShadow:
+                                avg >= 8
+                                  ? "inset 0 0 0 2px rgba(16, 185, 129, 0.35)"
+                                  : undefined,
+                            }}
+                          >
+                            <span
+                              className="text-2xl font-bold tabular-nums"
+                              style={{ color: ratingTextColor(avg) }}
+                            >
                               {avg.toFixed(1)}
                             </span>
                             <span className="text-xs text-foreground/45">avg / 10</span>
@@ -178,19 +197,35 @@ export function ResultsView({ data }: Props) {
                               <span className="min-w-0 truncate text-sm font-medium">
                                 {displayName(viewerId, rev.userId, roster)}
                               </span>
-                              <span className={`shrink-0 font-mono text-sm font-semibold tabular-nums ${ratingColor(rev.rating)}`}>
+                              <span
+                                className="shrink-0 font-mono text-sm font-semibold tabular-nums"
+                                style={{ color: ratingTextColor(rev.rating) }}
+                              >
                                 {rev.rating.toFixed(1)}
                               </span>
                             </div>
                             {/* Visual rating bar */}
-                            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-foreground/10">
+                            <div
+                              className="mt-1.5 h-1 w-full overflow-hidden rounded-full"
+                              style={{ backgroundColor: "rgba(128, 128, 128, 0.22)" }}
+                            >
                               <div
-                                className={`h-full rounded-full ${ratingBg(rev.rating)}`}
-                                style={{ width: `${(rev.rating / 10) * 100}%` }}
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${(rev.rating / 10) * 100}%`,
+                                  backgroundColor: ratingBarFillColor(rev.rating),
+                                }}
                               />
                             </div>
                             {rev.reviewText.trim() ? (
-                              <p className="mt-2 min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] text-sm text-foreground/70">
+                              <p
+                                className="mt-2 min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] text-sm text-foreground/70"
+                                style={{
+                                  whiteSpace: "pre-wrap",
+                                  overflowWrap: "anywhere",
+                                  wordBreak: "break-word",
+                                }}
+                              >
                                 {rev.reviewText}
                               </p>
                             ) : (

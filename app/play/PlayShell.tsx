@@ -362,7 +362,14 @@ export function PlayShell({ initialState }: Props) {
                     </span>
                   </div>
                   {rev.reviewText.trim() ? (
-                    <p className="mt-1 min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] text-sm text-foreground/75">
+                    <p
+                      className="mt-1 min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] text-sm text-foreground/75"
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                      }}
+                    >
                       {rev.reviewText}
                     </p>
                   ) : (
