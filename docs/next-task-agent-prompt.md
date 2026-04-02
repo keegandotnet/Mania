@@ -1,50 +1,54 @@
-# Agent task: play UX — per-round results, host panel, reviews
+# Agent task: profiles, end-game UX, group roster
 
 Per [`.cursor/rules/NEXT-AGENT-TASK.mdc`](../.cursor/rules/NEXT-AGENT-TASK.mdc): when you complete a task, post the **next-agent copy-paste prompt** and a **3–5 word title** for the work you just did **in the agent chat**, not in this file. Update this document only with the **substantive task** the next agent should execute, after any open work is finished, and call out risks to the user if needed.
 
 ---
 
+## Context (2026-04-02)
+
+Recent work already shipped: per-round results on Play, host panel visibility, multiline reviews, overflow fixes (inline fallbacks on Results for Safari cache resilience), `leaveGroup`, `/play` no longer redirects to `/results` when latest round is `revealed` (nav + Round control must stay reachable), email-based roster labels via `get_game_member_emails`, min rounds = player count, round limit locked after first round.
+
+---
+
 ## Goal
 
-### Product / UI (read [`app/play/PlayShell.tsx`](../app/play/PlayShell.tsx), [`app/results/ResultsView.tsx`](../app/results/ResultsView.tsx), [`app/actions/mania.ts`](../app/actions/mania.ts))
+### 1. Display names (`profiles`)
 
-1. **Round results after each round** — Players should see outcomes **when a round finishes** (`revealed`), not only as an end-of-game summary. For example: after reveal, show an on-`/play` block for the **latest revealed round** (album, scores, review blurbs) and/or tighten the flow to **`/results`** so the just-finished round is obvious. Avoid a UX where results feel delayed until the whole game completes.
+- Add a **`profiles`** table (`user_id` PK → `auth.users`, `display_name` text, timestamps). Populate on sign-up (and allow edit from `/account`).
+- Replace **email** as the primary visible label in Play / Results with **display_name**, falling back to email if unset.
+- Extend **`get_game_member_emails`** or add a companion RPC (e.g. return display_name) so roster rows stay one round-trip; keep RLS tight (members see only their game’s roster).
+- Update [docs/api.md](./api.md), [docs/schema.md](./schema.md), [docs/auth.md](./auth.md), [docs/testing.md](./testing.md).
 
-2. **Host panel visibility** — **Hide** the host **“Round control (host only)”** panel **while a round is in progress** (`awaiting_album` or `awaiting_reviews`). Show it when there is **no current round**, when the latest round is **`revealed`** (between rounds), or other moments when the host must start the next round or change limits/auto-advance. Keep settings accessible whenever the game is not in those “mid-round” states.
+### 2. End-of-game UX
 
-3. **Review input** — Replace the review **single-line `<input>`** with a **`<textarea>`** suitable for long text; support **newlines** end-to-end (submission and storage already use plain text — verify nothing strips `\n`).
+- When `games.status === "completed"`, Play and Results should show a **clear “game over”** state: final round summary link, optional CTA to create a new game / leave group per existing flows.
+- Audit RPC `start_next_round` / client refresh paths so completed games don’t trap users in confusing banners.
+- Document behaviour in [docs/state-machine.md](./state-machine.md) and [docs/product.md](./product.md) if behaviour changes.
 
-4. **Review display / layout** — Long review text must **not overflow** horizontally or break the layout. Use wrapping and width constraints (`min-w-0` in flex layouts, `break-words` / `overflow-wrap`, **`whitespace-pre-wrap`** where newlines should display) on **Play** and **Results** (everywhere review copy appears).
+### 3. Group roster on `/play`
 
-### Documentation / API
+- Show **current group members** (display name → email fallback) and join order on the Play page when the user is in a group, so it’s obvious who is in the room before/during a game.
+- Read from `group_members` + profiles (or existing email RPC pattern); respect RLS; avoid leaking non-members.
 
-- [docs/api.md](./api.md) already documents all `mania.ts` server actions (including `getMyGameState`, `getGameResults`, host settings RPCs). Extend it only if you add or change action signatures.
+### 4. Developer hygiene (optional, small)
+
+- Add a short note to [docs/testing.md](./testing.md) or [docs/supabase-cli.md](./supabase-cli.md): **Safari regular profile** may cache dev CSS; use Empty Caches, Private window, or disable caches while developing — explains “Private looks better than regular.”
 
 ## Done criteria
 
-- [ ] Round results feel timely per-round (not end-of-game-only); describe behavior briefly in PR or commit if non-obvious.
-- [ ] Host round-control panel follows the visibility rules above.
-- [ ] Review form uses a multiline control; newlines persist and render.
-- [ ] Review text never runs off-page in typical viewports (Play + Results).
-- [ ] `npm run lint` and `npm run build` pass.
+- [ ] Display names work end-to-end (signup → account edit → Play/Results labels).
+- [ ] Completed games have understandable Play + Results empty/summary states.
+- [ ] Group member list visible on Play when in a group.
+- [ ] Docs and `docs/api.md` match any new actions or RPCs.
+- [ ] `npm run lint` && `npm run build` pass.
 
-## Handoff / environment notes
+## Risks
 
-### Baseline (2026-04-02)
+- **`profiles` RLS** — Wrong policies can hide names or expose rows cross-user; mirror `game_members` / `group_members` patterns from [docs/security.md](./security.md).
+- **Migration ordering** — New table + RPC grants must apply cleanly on `supabase db push`.
+- **Email RPC rename** — If extending `get_game_member_emails`, update all callers in `app/actions/mania.ts` and keep backwards compatibility or migrate in one commit.
 
-| Item | Notes |
-| ---- | ----- |
-| `/results` | [`app/results/page.tsx`](../app/results/page.tsx) — dynamic, auth → else `login?next=/results`. |
-| Data | `getGameResults()` — revealed rounds only, reviews + `game_members` roster; see [api.md](./api.md). |
-| Docs | [security.md](./security.md) — RLS-only read path for results. [testing.md](./testing.md) — manual checks for `/results`, textarea, host panel, overflow. |
+### Backlog (later)
 
-### Suggested next steps (backlog)
-
-- **Display names** — `profiles` or Auth metadata instead of Player 1…N ([auth.md](./auth.md)).
-- **Export / share** — Copy-friendly or printable summary after game complete.
-- **Automated tests** — Extend `scripts/rls-smoke.mjs` or E2E for multiline reviews and results timing.
-
-### Risks
-
-- **Host trapped** — If visibility rules are wrong, the host might not see **Round control** when they need **Start next round**; test `revealed` + pending next round carefully.
-- **RLS** — Fewer rows than expected → verify session `auth.uid()` and membership.
+- Export / printable summary after game complete.
+- E2E or extend `scripts/rls-smoke.mjs` for profiles and completed-game flows.
