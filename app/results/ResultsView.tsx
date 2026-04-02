@@ -1,0 +1,221 @@
+import Link from "next/link";
+import type { GameResultsData, GameResultsRosterRow } from "@/app/actions/mania";
+
+function displayName(viewerId: string, userId: string, roster: GameResultsRosterRow[]): string {
+  const row = roster.find((r) => r.userId === userId);
+  const email = row?.email ?? "Teammate";
+  if (userId === viewerId) return email;
+  return email;
+}
+
+function averageRating(reviews: { rating: number }[]): number | null {
+  if (reviews.length === 0) return null;
+  const sum = reviews.reduce((s, r) => s + r.rating, 0);
+  return Math.round((sum / reviews.length) * 10) / 10;
+}
+
+function ratingColor(score: number): string {
+  if (score >= 8) return "text-emerald-600 dark:text-emerald-400";
+  if (score >= 6) return "text-amber-500 dark:text-amber-400";
+  return "text-red-500 dark:text-red-400";
+}
+
+function ratingBg(score: number): string {
+  if (score >= 8) return "bg-emerald-500";
+  if (score >= 6) return "bg-amber-400";
+  return "bg-red-400";
+}
+
+type Props = { data: GameResultsData };
+
+export function ResultsView({ data }: Props) {
+  const { viewerId, email, group, game, roster, rounds } = data;
+
+  const bestRoundId =
+    rounds.length > 1
+      ? rounds.reduce(
+          (best, r) => {
+            const avg = averageRating(r.reviews);
+            if (avg == null) return best;
+            if (best.avg == null || avg > best.avg) return { id: r.id, avg };
+            return best;
+          },
+          { id: "", avg: null as number | null }
+        ).id
+      : "";
+
+  return (
+    <div className="flex min-w-0 flex-col gap-8">
+      <p className="text-xs text-foreground/50">
+        Signed in as <span className="font-mono text-foreground/80">{email}</span>
+      </p>
+
+      {!group ? (
+        <p className="text-sm text-foreground/70">
+          Join a group on{" "}
+          <Link href="/play" className="underline underline-offset-2">
+            Play
+          </Link>{" "}
+          to see round results here.
+        </p>
+      ) : null}
+
+      {group && !game ? (
+        <div className="rounded-lg border border-black/10 p-4 dark:border-white/15">
+          <p className="text-sm font-medium">{group.name}</p>
+          <p className="mt-2 text-sm text-foreground/70">
+            No active or latest game yet. Start one from{" "}
+            <Link href="/play" className="underline underline-offset-2">
+              Play
+            </Link>
+            .
+          </p>
+        </div>
+      ) : null}
+
+      {group && game ? (
+        <>
+          <div className="flex flex-col gap-1">
+            <p className="text-sm text-foreground/60">
+              Group <span className="font-medium text-foreground">{group.name}</span>
+              <span className="text-foreground/40"> · </span>
+              <span className="font-mono text-foreground/70">{group.inviteCode}</span>
+            </p>
+            <p className="text-sm text-foreground/70">
+              Round {game.currentRound} of {game.maxRounds}
+              {game.status === "completed" ? " · Game complete" : ""}
+            </p>
+          </div>
+
+          {rounds.length === 0 ? (
+            <p className="text-sm text-foreground/70">
+              No revealed rounds yet. After everyone reviews an album, scores show up here. You can keep
+              playing on{" "}
+              <Link href="/play" className="underline underline-offset-2">
+                Play
+              </Link>
+              .
+            </p>
+          ) : (
+            <ul className="flex min-w-0 flex-col gap-6">
+              {rounds.map((round) => {
+                const avg = averageRating(round.reviews);
+                const isBest = round.id === bestRoundId;
+
+                return (
+                  <li
+                    key={round.id}
+                    className="min-w-0 overflow-hidden rounded-xl border border-black/10 dark:border-white/15"
+                  >
+                    {/* Round header */}
+                    <div className="border-b border-black/10 bg-foreground/[0.03] px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+                      <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-foreground/50">
+                              Round {round.roundNumber}
+                            </span>
+                            {isBest && (
+                              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                                🏆 Top pick
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 min-w-0 break-words text-base font-semibold leading-tight">
+                            {round.albumName ?? "Album TBA"}
+                          </p>
+                          {round.artistName ? (
+                            <p className="break-words text-sm text-foreground/70">
+                              by {round.artistName}
+                            </p>
+                          ) : null}
+                          <p className="mt-1 text-xs text-foreground/50">
+                            Picked by{" "}
+                            <span className="text-foreground/80">
+                              {displayName(viewerId, round.pickerId, roster)}
+                            </span>
+                            {round.albumUrl ? (
+                              <>
+                                {" · "}
+                                <a
+                                  href={round.albumUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline underline-offset-2"
+                                >
+                                  Listen
+                                </a>
+                              </>
+                            ) : null}
+                          </p>
+                        </div>
+
+                        {/* Average score badge */}
+                        {avg != null ? (
+                          <div className="flex flex-col items-center rounded-lg border border-black/10 px-3 py-1.5 dark:border-white/15">
+                            <span className={`text-2xl font-bold tabular-nums ${ratingColor(avg)}`}>
+                              {avg.toFixed(1)}
+                            </span>
+                            <span className="text-xs text-foreground/45">avg / 10</span>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Reviews */}
+                    {round.reviews.length === 0 ? (
+                      <p className="px-4 py-3 text-sm text-foreground/60">
+                        No reviews recorded (round was advanced early).
+                      </p>
+                    ) : (
+                      <ul className="flex min-w-0 flex-col divide-y divide-black/5 dark:divide-white/5">
+                        {round.reviews.map((rev) => (
+                          <li
+                            key={`${round.id}-${rev.userId}`}
+                            className="min-w-0 overflow-hidden px-4 py-3"
+                          >
+                            <div className="flex min-w-0 items-baseline justify-between gap-2">
+                              <span className="min-w-0 truncate text-sm font-medium">
+                                {displayName(viewerId, rev.userId, roster)}
+                              </span>
+                              <span className={`shrink-0 font-mono text-sm font-semibold tabular-nums ${ratingColor(rev.rating)}`}>
+                                {rev.rating.toFixed(1)}
+                              </span>
+                            </div>
+                            {/* Visual rating bar */}
+                            <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-foreground/10">
+                              <div
+                                className={`h-full rounded-full ${ratingBg(rev.rating)}`}
+                                style={{ width: `${(rev.rating / 10) * 100}%` }}
+                              />
+                            </div>
+                            {rev.reviewText.trim() ? (
+                              <p className="mt-2 min-w-0 overflow-hidden whitespace-pre-wrap break-words text-sm text-foreground/70">
+                                {rev.reviewText}
+                              </p>
+                            ) : (
+                              <p className="mt-1 text-xs italic text-foreground/40">No written review</p>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <div className="flex gap-4 text-sm">
+            <Link
+              href="/play"
+              className="font-medium text-foreground underline-offset-2 hover:underline"
+            >
+              ← Back to Play
+            </Link>
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}

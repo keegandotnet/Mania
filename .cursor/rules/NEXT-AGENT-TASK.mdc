@@ -1,0 +1,14 @@
+---
+description: 
+alwaysApply: true
+---
+
+After making a change, advise the user on how to test changes in the front end. Explain what flow they should follow, and what to look for to validate success.
+
+After the user confirms changes look good, and are ready to proceed:
+
+Use docs/next-task-agent-prompt.md after a task is completed to create instructions for the next agent's task. Make sure all outstanding tasks are completed before overwriting the doc, and call out any risks/missed content to the user so that the next agent can pick it up. 
+
+Create a prompt to copy to the next agent, as well as a title for the current agent to summarize its task (3-5 words max). Include the followup prompt and agent title in the agent chat, not the .md file. 
+
+Include in the copy-paste prompt a link to NEXT-AGENT-TASK.md

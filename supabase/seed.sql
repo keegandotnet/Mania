@@ -1,0 +1,1 @@
+-- Optional seed data for `supabase db reset`. Add SQL here if needed.
