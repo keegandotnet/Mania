@@ -105,7 +105,7 @@ export function ResultsView({ data }: Props) {
                 return (
                   <li
                     key={round.id}
-                    className="min-w-0 overflow-hidden rounded-xl border border-black/10 dark:border-white/15"
+                    className="min-w-0 overflow-x-hidden rounded-xl border border-black/10 dark:border-white/15"
                   >
                     {/* Round header */}
                     <div className="border-b border-black/10 bg-foreground/[0.03] px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
@@ -121,11 +121,11 @@ export function ResultsView({ data }: Props) {
                               </span>
                             )}
                           </div>
-                          <p className="mt-0.5 min-w-0 break-words text-base font-semibold leading-tight">
+                          <p className="mt-0.5 min-w-0 [overflow-wrap:anywhere] text-base font-semibold leading-tight">
                             {round.albumName ?? "Album TBA"}
                           </p>
                           {round.artistName ? (
-                            <p className="break-words text-sm text-foreground/70">
+                            <p className="[overflow-wrap:anywhere] text-sm text-foreground/70">
                               by {round.artistName}
                             </p>
                           ) : null}
@@ -172,7 +172,7 @@ export function ResultsView({ data }: Props) {
                         {round.reviews.map((rev) => (
                           <li
                             key={`${round.id}-${rev.userId}`}
-                            className="min-w-0 overflow-hidden px-4 py-3"
+                            className="min-w-0 overflow-x-hidden px-4 py-3"
                           >
                             <div className="flex min-w-0 items-baseline justify-between gap-2">
                               <span className="min-w-0 truncate text-sm font-medium">
@@ -190,7 +190,7 @@ export function ResultsView({ data }: Props) {
                               />
                             </div>
                             {rev.reviewText.trim() ? (
-                              <p className="mt-2 min-w-0 overflow-hidden whitespace-pre-wrap break-words text-sm text-foreground/70">
+                              <p className="mt-2 min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] text-sm text-foreground/70">
                                 {rev.reviewText}
                               </p>
                             ) : (
