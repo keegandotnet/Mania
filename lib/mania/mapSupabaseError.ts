@@ -19,6 +19,8 @@ const RPC_MESSAGES: Record<string, string> = {
   game_already_started: "Round limit cannot be changed after the first round has started.",
   max_rounds_below_player_count:
     "Round limit must be at least equal to the number of players in the game.",
+  host_of_active_game:
+    "You are the host of an active game. Ask another player to take over, or end the game before leaving.",
   not_game_member: "You are not part of this game.",
   album_not_submitted: "The current round is still waiting for an album.",
   empty_roster: "This game has no players.",

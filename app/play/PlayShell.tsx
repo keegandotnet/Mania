@@ -9,6 +9,7 @@ import {
   getMyGameState,
   createGroup,
   joinGroup,
+  leaveGroup,
   createGame,
   updateGameMaxRounds,
   updateGameAutoAdvance,
@@ -173,6 +174,8 @@ export function PlayShell({ initialState }: Props) {
   const [maxRoundsFb, setMaxRoundsFb] = useState<FeedbackState>(null);
   const [autoAdvanceFb, setAutoAdvanceFb] = useState<FeedbackState>(null);
 
+  const [leaveConfirm, setLeaveConfirm] = useState(false);
+  const [leaveFb, setLeaveFb] = useState<FeedbackState>(null);
   const [groupName, setGroupName] = useState("");
   const [joinInvite, setJoinInvite] = useState("");
   const [albumName, setAlbumName] = useState("");
@@ -796,6 +799,61 @@ export function PlayShell({ initialState }: Props) {
           Group invite:{" "}
           <span className="font-mono text-foreground/60">{group.inviteCode}</span>
         </p>
+      ) : null}
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Leave group                                                          */}
+      {/* ------------------------------------------------------------------ */}
+      {group ? (
+        <div className="border-t border-black/10 pt-4 dark:border-white/10">
+          {!leaveConfirm ? (
+            <button
+              type="button"
+              onClick={() => setLeaveConfirm(true)}
+              className="text-xs text-foreground/40 underline-offset-2 hover:text-red-500 hover:underline"
+            >
+              Leave group &ldquo;{group.name}&rdquo;
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <p className="text-xs text-foreground/70">
+                Are you sure? If you are the sole member this will delete the
+                group and all its game data. If others are in the group and you
+                are the host of an active game, you must end the game first.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  disabled={pending}
+                  className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+                  onClick={() => {
+                    setLeaveFb(null);
+                    startTransition(async () => {
+                      const r = await leaveGroup(group.id);
+                      if (!r.ok) {
+                        setLeaveFb({ kind: "error", message: r.message });
+                        setLeaveConfirm(false);
+                        return;
+                      }
+                      setLeaveConfirm(false);
+                      refresh();
+                    });
+                  }}
+                >
+                  Yes, leave
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLeaveConfirm(false); setLeaveFb(null); }}
+                  className="rounded-md border border-black/15 px-3 py-1.5 text-xs font-medium dark:border-white/20"
+                >
+                  Cancel
+                </button>
+              </div>
+              <Feedback fb={leaveFb} />
+            </div>
+          )}
+        </div>
       ) : null}
     </div>
   );

@@ -419,6 +419,19 @@ export async function joinGroup(inviteCode: string): Promise<ActionResult<{ grou
   return ok({ groupId: data as string });
 }
 
+export async function leaveGroup(groupId: string): Promise<ActionResult<void>> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return actionErr("unauthorized", "Sign in required.");
+
+  const { error } = await supabase.rpc("leave_group", { p_group_id: groupId });
+
+  if (error) return fromPostgrestError(error);
+  return ok(undefined);
+}
+
 export async function createGame(groupId: string): Promise<ActionResult<{ gameId: string }>> {
   const supabase = await createSupabaseServerClient();
   const {
