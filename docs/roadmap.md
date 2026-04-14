@@ -11,14 +11,29 @@
 - ✅ Per-round results with color-coded scores
 - ✅ Auto-navigate to Results after each round
 - ✅ Email-based player identification
+- ✅ Display names / user profiles
+- ✅ Group management on /account (leave group, view invite codes)
 - 🔲 Export / share-friendly results summary
-- 🔲 Display names / user profiles
 
 ## Phase 2 — UI overhaul
 
-- Visual design pass: typography, spacing, color system, component polish
-- Consistent layout shell (nav, page transitions, empty states)
-- Mobile-responsive improvements across Play, Results, and Account
+Design system defined in `docs/design.md`. Shipping in small sprints:
+
+- ✅ Design tokens defined (`globals.css`, `docs/design.md`)
+- 🔲 Sprint 2: SiteHeader polish + landing page (`/`) with real product copy
+- 🔲 Sprint 3: `/account` page — groups + games sections
+- 🔲 Sprint 4: `/play` — game state cards (your turn / waiting / submitted / revealed)
+- 🔲 Sprint 5: `/results` — round cards, score display
+- 🔲 Sprint 6: Login / signup forms
+
+## Phase 2.5 — Landing page
+
+A public-facing `/` that explains what Mania is, with clear CTAs (sign up / sign in). Needed before sharing with new players.
+
+- Headline + one-sentence description
+- "How it works" — 3-step explainer (create group → pick albums → rate & review)
+- Social proof / empty state if no active games
+- Sign up CTA (primary orange button)
 
 ## Phase 3 — Spotify integration
 

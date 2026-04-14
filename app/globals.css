@@ -1,26 +1,86 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   See docs/design.md for the full spec and usage rules.
+   All components reference these variables; raw hex values live here only.
+   ────────────────────────────────────────────────────────────────────────── */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  /* Base */
+  --background: #fafaf9;
+  --surface: #ffffff;
+  --surface-raised: #f3f4f6;
+  --foreground: #111827;
+  --foreground-secondary: #6b7280;
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+
+  /* Accents — orange: CTA / your-turn; yellow: ratings; green: submitted */
+  --accent-orange: #f97316;
+  --accent-orange-hover: #ea6c0a;
+  --accent-orange-fg: #c2410c;   /* AA-compliant orange text on light bg */
+  --accent-yellow: #facc15;
+  --accent-yellow-fg: #92400e;   /* dark amber — readable on yellow fills */
+  --accent-green: #22c55e;
+  --accent-green-fg: #14532d;    /* dark green — readable on green fills */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Warm dark — matches the warmth of the light-mode #fafaf9 */
+    --background: #141412;
+    --surface: #1c1c1a;
+    --surface-raised: #242422;
+    --foreground: #f3f4f6;
+    --foreground-secondary: #9ca3af;
+    --border: #2d2d2b;
+    --border-strong: #3f3f3c;
+
+    /* Lighter accents for dark backgrounds */
+    --accent-orange: #fb923c;
+    --accent-orange-hover: #f97316;
+    --accent-orange-fg: #fed7aa;
+    --accent-yellow: #fde047;
+    --accent-yellow-fg: #fef3c7;
+    --accent-green: #4ade80;
+    --accent-green-fg: #dcfce7;
   }
 }
+
+/* ── Tailwind v4 theme extension ───────────────────────────────────────────
+   Maps CSS variables → Tailwind utility classes:
+     bg-surface, text-foreground-secondary, border-border, etc.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@theme inline {
+  /* Base palette */
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  /* Accents */
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-orange-hover: var(--accent-orange-hover);
+  --color-accent-orange-fg: var(--accent-orange-fg);
+  --color-accent-yellow: var(--accent-yellow);
+  --color-accent-yellow-fg: var(--accent-yellow-fg);
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-fg: var(--accent-green-fg);
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ── Base styles ───────────────────────────────────────────────────────────*/
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
