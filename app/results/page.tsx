@@ -22,6 +22,7 @@ export default async function ResultsPage() {
     : {
         viewerId: user.id,
         email: user.email ?? user.id,
+        viewerDisplayName: null,
         group: null,
         game: null,
         roster: [],

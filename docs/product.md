@@ -15,7 +15,7 @@ After each round is revealed, players are automatically taken to the Results pag
 - Max 6 users per group
 - Round limit set before the game starts (min = number of players; locked once play begins)
 - Auto-advance option: host can turn on automatic progression after the last review
-- Display names use account email addresses (profile display-name support planned)
+- Optional **display names** (`profiles`) with email fallback; editable on `/account`, optional field on `/signup`
 
 ## Core Loop
 
@@ -33,11 +33,10 @@ After each round is revealed, players are automatically taken to the Results pag
 - Color-coded scores: green (≥ 8), amber (5–7.9), red (< 5)
 - Visual rating bar per review
 - "Top pick" badge on the highest-average round
-- Players are identified by their email address
+- Players are identified by display name when set, otherwise email
 
 ## Roadmap
 
 - Phase 2: Spotify integration for album search and cover art
-- Phase 3: Display names / profiles
-- Phase 4: Analytics and history
-- Phase 5: Mobile app
+- Phase 3: Analytics and history
+- Phase 4: Mobile app

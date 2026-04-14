@@ -33,7 +33,7 @@ These choices are fixed for the current backend implementation so multiple agent
    The first schema migration ships with RLS off; `20250328210000_enable_rls.sql` turns it on with member-scoped reads. **Joins** still go through `join_group_by_invite` so non-members cannot probe `groups` by arbitrary id (see [security.md](./security.md)).
 
 11. **Display names**  
-   Players are identified by their **auth email address**, resolved via the `get_game_member_emails` security-definer RPC (which joins `auth.users` server-side). A dedicated `profiles` table with display names is a planned follow-up.
+   Players have optional **`profiles.display_name`**; UI prefers it over email, with email as fallback. Rosters load via `get_game_member_emails` and `get_group_member_profiles` (joining `auth.users` and `profiles` server-side for members only).
 
 12. **Auto-navigate to results**  
    When a round becomes `revealed` while a player is on `/play`, the client automatically navigates to `/results`. If a player navigates to `/play` while the latest round is already `revealed`, the server redirects them to `/results`.

@@ -7,6 +7,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabaseClient";
 export function SignupForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -20,10 +21,14 @@ export function SignupForm() {
     try {
       const supabase = createBrowserSupabaseClient();
       const origin = window.location.origin;
+      const metaName = displayName.trim();
       const { error: signError } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${origin}/auth/callback?next=/account` },
+        options: {
+          emailRedirectTo: `${origin}/auth/callback?next=/account`,
+          data: metaName ? { display_name: metaName } : undefined,
+        },
       });
       if (signError) {
         setError(signError.message);
@@ -41,6 +46,19 @@ export function SignupForm() {
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium">Display name (optional)</span>
+        <input
+          name="displayName"
+          type="text"
+          autoComplete="nickname"
+          maxLength={80}
+          value={displayName}
+          onChange={(ev) => setDisplayName(ev.target.value)}
+          placeholder="How others see you in-game"
+          className="rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none ring-0 focus:border-foreground/40 dark:border-white/20"
+        />
+      </label>
       <label className="flex flex-col gap-1 text-sm">
         <span className="font-medium">Email</span>
         <input

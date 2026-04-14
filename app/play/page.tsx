@@ -21,11 +21,13 @@ export default async function PlayPage() {
     : {
         viewerId: user.id,
         email: user.email ?? user.id,
+        viewerDisplayName: null,
         group: null,
         game: null,
         round: null,
         hasReviewed: false,
         revealedDetail: null,
+        groupRoster: null,
       };
 
   return (

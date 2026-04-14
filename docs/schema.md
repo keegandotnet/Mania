@@ -3,6 +3,8 @@
 ## Tables
 
 ```
+profiles(user_id -> auth.users, display_name, created_at, updated_at)
+
 groups(id, name, created_by, invite_code, created_at)
 group_members(id, group_id, user_id, player_order, joined_at)
 
@@ -32,7 +34,7 @@ reviews(id, round_id, user_id, rating, review_text, created_at)
 | ----- | ------- |
 | `pending` | Game created; no round started yet. |
 | `active` | First round started; play in progress. |
-| `completed` | Game ended (via host or round limit reached). |
+| `completed` | Game ended after the final round is revealed and `round_number >= max_rounds`. |
 
 ## Round status values
 

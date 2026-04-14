@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
-  type GameResultsRosterRow,
+  type GroupRosterRow,
   type MyGameState,
   getMyGameState,
   createGroup,
@@ -17,6 +17,7 @@ import {
   submitAlbum,
   submitReview,
 } from "@/app/actions/mania";
+import { memberLabel } from "@/lib/mania/memberLabel";
 
 type Props = { initialState: MyGameState };
 
@@ -46,7 +47,7 @@ function statusFor(state: MyGameState): { title: string; detail: string; urgent:
       : "";
     return {
       title: "Game complete",
-      detail: `${last} You reached the round limit (${game.maxRounds}). Start a new game below when you are ready.`,
+      detail: `${last} Final scoreboard and next steps are below.`,
       urgent: false,
     };
   }
@@ -130,9 +131,8 @@ function averageRating(reviews: { rating: number }[]): number | null {
   return Math.round((sum / reviews.length) * 10) / 10;
 }
 
-function seatLabel(viewerId: string, userId: string, roster: GameResultsRosterRow[]): string {
-  const row = roster.find((r) => r.userId === userId);
-  return row?.email ?? (userId === viewerId ? "You" : "Teammate");
+function groupMemberLabel(viewerId: string, userId: string, roster: GroupRosterRow[]): string {
+  return memberLabel(viewerId, userId, roster);
 }
 
 // ---------------------------------------------------------------------------
@@ -249,7 +249,14 @@ export function PlayShell({ initialState }: Props) {
       {/* Identity */}
       <p className="text-xs text-foreground/50">
         Signed in as{" "}
-        <span className="font-mono text-foreground/80">{state.email}</span>
+        <span className="text-foreground/80">
+          {state.viewerDisplayName?.trim() || state.email}
+        </span>
+        {state.viewerDisplayName?.trim() ? (
+          <span className="mt-0.5 block font-mono text-[0.7rem] text-foreground/45">
+            {state.email}
+          </span>
+        ) : null}
       </p>
 
       {/* Status banner */}
@@ -297,6 +304,41 @@ export function PlayShell({ initialState }: Props) {
         </div>
       </div>
 
+      {game?.status === "completed" ? (
+        <section className="rounded-lg border border-foreground/25 bg-foreground/[0.04] p-4 dark:border-white/25 dark:bg-white/[0.04]">
+          <h2 className="text-sm font-semibold">Game over</h2>
+          <p className="mt-1 text-sm text-foreground/75">
+            Every round has finished. Open the scoreboard for the full history, then use Setup below to start a new
+            game or exit the group.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium">
+            <Link href="/results" className="text-foreground underline-offset-2 hover:underline">
+              View final scores
+            </Link>
+            <Link href="/account" className="text-foreground/80 underline-offset-2 hover:underline">
+              Edit display name
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      {group && state.groupRoster && state.groupRoster.length > 0 ? (
+        <section className="rounded-lg border border-black/10 p-4 dark:border-white/15">
+          <h2 className="text-sm font-semibold">Group members</h2>
+          <p className="mt-0.5 text-xs text-foreground/50">Join order (first joined first)</p>
+          <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-foreground/90">
+            {state.groupRoster.map((m) => (
+              <li key={m.userId} className="marker:text-foreground/40">
+                <span className="font-medium">{groupMemberLabel(viewerId, m.userId, state.groupRoster!)}</span>
+                {m.displayName?.trim() ? (
+                  <span className="ml-2 font-mono text-xs text-foreground/45">{m.email}</span>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+
       {/* ------------------------------------------------------------------ */}
       {/* Latest revealed round — scores & reviews (timely per-round UX)     */}
       {/* ------------------------------------------------------------------ */}
@@ -319,7 +361,7 @@ export function PlayShell({ initialState }: Props) {
               <p className="text-xs text-foreground/50">
                 Picked by{" "}
                 <span className="text-foreground/70">
-                  {seatLabel(viewerId, revealedDetail.pickerId, revealedDetail.roster)}
+                  {memberLabel(viewerId, revealedDetail.pickerId, revealedDetail.roster)}
                 </span>
                 {round.albumUrl ? (
                   <>
@@ -355,7 +397,7 @@ export function PlayShell({ initialState }: Props) {
                 >
                   <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
                     <span className="text-sm font-medium">
-                      {seatLabel(viewerId, rev.userId, revealedDetail.roster)}
+                      {memberLabel(viewerId, rev.userId, revealedDetail.roster)}
                     </span>
                     <span className="shrink-0 font-mono text-sm tabular-nums text-foreground/80">
                       {rev.rating.toFixed(1)} / 10

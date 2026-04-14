@@ -6,12 +6,12 @@
 |-----------|---------|
 | `pending` | Game created; no round started yet (`current_round = 0`). Round limit can still be changed. |
 | `active`  | At least one round exists; play in progress. Round limit is locked. |
-| `completed` | Game ended — round limit reached or host ended the game. |
+| `completed` | Game ended — final round revealed with `round_number >= max_rounds`. |
 
 Transitions:
 
 - `pending` → `active`: when the first round is created (`startNextRound`).
-- `active` → `completed`: when `startNextRound` is called and `current_round` would exceed `max_rounds`.
+- `active` → `completed`: when the **last required review** on the **final** round is submitted (`submit_review` reveals that round, then sets the game to `completed` if `round_number >= max_rounds`). Starting a new round beyond the limit is rejected by `start_next_round` instead of completing the game.
 
 ## Round status (`rounds.status`)
 
@@ -19,7 +19,7 @@ Transitions:
 |--------------------|---------|
 | `awaiting_album`  | Round created; designated submitter must call `submitAlbum`. |
 | `awaiting_reviews`| Album submitted; non-submitters submit reviews. |
-| `revealed`        | Round finished; scores/reviews visible. Players are redirected to `/results`. |
+| `revealed`        | Round finished; scores/reviews visible. Clients often open `/results` after reveal (not a server redirect from `/play`). |
 
 Transitions:
 
@@ -32,9 +32,9 @@ Transitions:
 | Action            | Actor |
 |-------------------|--------|
 | `createGame`      | Any group member (becomes host stored as `host_id`). |
-| `startNextRound`  | **Host only.** If the latest round is `awaiting_reviews`, this call reveals it (early advance), then creates the next round. Marks game `completed` if `max_rounds` is reached. |
+| `startNextRound`  | **Host only.** If the latest round is `awaiting_reviews`, this call reveals it (early advance), then creates the next round. Errors if the next round would exceed `max_rounds`. |
 | `submitAlbum`     | The round's designated submitter (`rounds.created_by`) only. |
-| `submitReview`    | Any `game_members` row for that game **except** the round submitter. |
+| `submitReview`    | Any `game_members` row for that game **except** the round submitter. On the **final** round, the last required review reveals the round and may set the game to `completed` when `round_number >= max_rounds`. |
 | `updateGameMaxRounds` | **Host only.** Only while `current_round = 0` (before first round). Min = player count. |
 | `updateGameAutoAdvance` | **Host only.** Can be toggled at any time while the game is active. |
 

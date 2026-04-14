@@ -1,11 +1,9 @@
 import Link from "next/link";
 import type { GameResultsData, GameResultsRosterRow } from "@/app/actions/mania";
+import { memberLabel } from "@/lib/mania/memberLabel";
 
-function displayName(viewerId: string, userId: string, roster: GameResultsRosterRow[]): string {
-  const row = roster.find((r) => r.userId === userId);
-  const email = row?.email ?? "Teammate";
-  if (userId === viewerId) return email;
-  return email;
+function rosterLabel(viewerId: string, userId: string, roster: GameResultsRosterRow[]): string {
+  return memberLabel(viewerId, userId, roster);
 }
 
 function averageRating(reviews: { rating: number }[]): number | null {
@@ -30,7 +28,7 @@ function ratingBarFillColor(score: number): string {
 type Props = { data: GameResultsData };
 
 export function ResultsView({ data }: Props) {
-  const { viewerId, email, group, game, roster, rounds } = data;
+  const { viewerId, email, viewerDisplayName, group, game, roster, rounds } = data;
 
   const bestRoundId =
     rounds.length > 1
@@ -48,7 +46,11 @@ export function ResultsView({ data }: Props) {
   return (
     <div className="flex min-w-0 flex-col gap-8">
       <p className="text-xs text-foreground/50">
-        Signed in as <span className="font-mono text-foreground/80">{email}</span>
+        Signed in as{" "}
+        <span className="text-foreground/80">{viewerDisplayName?.trim() || email}</span>
+        {viewerDisplayName?.trim() ? (
+          <span className="mt-0.5 block font-mono text-[0.7rem] text-foreground/45">{email}</span>
+        ) : null}
       </p>
 
       {!group ? (
@@ -76,6 +78,18 @@ export function ResultsView({ data }: Props) {
 
       {group && game ? (
         <>
+          {game.status === "completed" ? (
+            <div className="rounded-lg border border-foreground/20 bg-foreground/[0.04] p-4 dark:border-white/20 dark:bg-white/[0.04]">
+              <p className="text-sm font-semibold">Game over</p>
+              <p className="mt-1 text-sm text-foreground/75">
+                This session has ended. You are viewing the final scoreboard. Start a new game from Play when your group
+                is ready.
+              </p>
+              <Link href="/play" className="mt-2 inline-block text-sm font-medium text-foreground underline-offset-2 hover:underline">
+                Back to Play
+              </Link>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-1">
             <p className="text-sm text-foreground/60">
               Group <span className="font-medium text-foreground">{group.name}</span>
@@ -139,7 +153,7 @@ export function ResultsView({ data }: Props) {
                           <p className="mt-1 text-xs text-foreground/50">
                             Picked by{" "}
                             <span className="text-foreground/80">
-                              {displayName(viewerId, round.pickerId, roster)}
+                              {rosterLabel(viewerId, round.pickerId, roster)}
                             </span>
                             {round.albumUrl ? (
                               <>
@@ -195,7 +209,7 @@ export function ResultsView({ data }: Props) {
                           >
                             <div className="flex min-w-0 items-baseline justify-between gap-2">
                               <span className="min-w-0 truncate text-sm font-medium">
-                                {displayName(viewerId, rev.userId, roster)}
+                                {rosterLabel(viewerId, rev.userId, roster)}
                               </span>
                               <span
                                 className="shrink-0 font-mono text-sm font-semibold tabular-nums"

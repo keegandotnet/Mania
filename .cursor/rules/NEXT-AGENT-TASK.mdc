@@ -1,14 +1,38 @@
 ---
-description: 
+description: Handoff after tasks; each agent ships one vertical (UI + backend) unless excepted.
 alwaysApply: true
 ---
 
-After making a change, advise the user on how to test changes in the front end. Explain what flow they should follow, and what to look for to validate success.
+## Vertical slice (default)
 
-After the user confirms changes look good, and are ready to proceed:
+Each task defined in **`docs/next-task-agent-prompt.md`** should ship **one end-to-end vertical**, unless the doc explicitly marks the task as **hardening-only** or **infra-only** (see below).
 
-Use docs/next-task-agent-prompt.md after a task is completed to create instructions for the next agent's task. Make sure all outstanding tasks are completed before overwriting the doc, and call out any risks/missed content to the user so that the next agent can pick it up. 
+A **vertical** means:
 
-Create a prompt to copy to the next agent, as well as a title for the current agent to summarize its task (3-5 words max). Include the followup prompt and agent title in the agent chat, not the .md file. 
+- **User-visible:** at least one meaningful change players can see or use (route, screen, control, or clearly improved copy/empty state on an existing page).
+- **Architecture / backend as needed:** schema migrations, RLS policies, `SECURITY DEFINER` RPCs, server actions, types, and **`docs/api.md`** (and related docs) updated in the **same task** so the feature is coherent and reviewable.
 
-Include in the copy-paste prompt a link to NEXT-AGENT-TASK.md
+Pure documentation-only or test-only work is fine **inside** that vertical (e.g. extend smoke tests for the RPCs you just added). Avoid shipping **only** tests/docs with **no** user-visible or API surface change unless the task is explicitly scoped as an exception.
+
+### Exceptions (must be stated in `docs/next-task-agent-prompt.md`)
+
+- **Hardening-only:** e.g. RLS audit, extended `rls-smoke`, migration repair — no new UI; call this out in the task title and "Context" so the next sprint returns to a product vertical.
+- **Infra-only:** rare; same explicit labeling.
+
+---
+
+After making a change, advise the user on how to test in the front end: which flow to follow and what to look for to validate success.
+
+After the user confirms changes look good and is ready to proceed:
+
+1. **Discuss the next feature with the user before writing anything.** Do not immediately write `docs/next-task-agent-prompt.md`. Instead:
+   - Read `docs/roadmap.md` and `docs/next-task-agent-prompt.md` (the current task) for context on what has shipped and what the backlog looks like.
+   - Propose **2–3 concrete next-feature options**, each in one sentence, drawing from the roadmap backlog, open risks noted in the current task, or obvious UX gaps in what was just shipped.
+   - Ask **at least one clarifying question** that would meaningfully change the scope or design of the top suggestion (e.g. "Should Spotify search be a server-side proxy or a client-side call?", "Do you want group leave to be instant or confirmation-gated?", "Should this show all-time stats or per-game stats first?").
+   - Wait for the user's response before writing the next task doc.
+
+2. Once the user has weighed in, finish all outstanding work, then write **`docs/next-task-agent-prompt.md`** with the agreed-upon next task (one vertical or an explicitly labeled exception). Note any risks or deferred items for the user.
+
+3. In the **agent chat** (not inside the `.md` file), give the user a **copy-paste prompt** for the next agent and a **3–5 word title** summarizing what the current agent shipped.
+
+4. Include in that copy-paste prompt a link to this rule: **[`.cursor/rules/NEXT-AGENT-TASK.mdc`](.cursor/rules/NEXT-AGENT-TASK.mdc)**

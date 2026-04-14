@@ -9,6 +9,13 @@
  * auth.admin then exercise RPCs with the anon client + session only.
  *
  * Or set RLS_SMOKE_EMAIL_A / RLS_SMOKE_PASSWORD_A / _B / _B for existing accounts (sign-in only).
+ *
+ * Coverage includes:
+ *   - create_group_with_owner, join_group_by_invite, create_game_for_group
+ *   - start_next_round, submit_album, submit_review (auto-reveal)
+ *   - get_game_member_emails: asserts rows contain user_id, email, and display_name (nullable)
+ *   - get_group_member_profiles: asserts rows are ordered by player_order ascending
+ *   - RLS cross-user isolation: user B cannot read a group they are not in
  */
 
 import { createClient } from "@supabase/supabase-js";
@@ -150,7 +157,50 @@ async function main() {
     fail("Expected round revealed after all reviews; RLS select rounds failed?", e7 ?? new Error(round?.status));
   }
 
-  console.log("rls-smoke: OK", { groupId: gid, gameId, roundId, invite: realInvite });
+  // ── get_game_member_emails shape check ────────────────────────────────────
+  const { data: emailRows, error: eEmail } = await a.rpc("get_game_member_emails", { p_game_id: gameId });
+  if (eEmail || !Array.isArray(emailRows) || emailRows.length === 0) {
+    fail("get_game_member_emails returned no rows or errored", eEmail);
+  }
+  for (const row of emailRows) {
+    if (typeof row.user_id !== "string" || !row.user_id) {
+      fail("get_game_member_emails: row missing user_id", row);
+    }
+    if (typeof row.email !== "string" || !row.email) {
+      fail("get_game_member_emails: row missing email", row);
+    }
+    // display_name is nullable — just assert the key is present
+    if (!Object.prototype.hasOwnProperty.call(row, "display_name")) {
+      fail("get_game_member_emails: row missing display_name key", row);
+    }
+  }
+  console.log("  get_game_member_emails: OK", emailRows.length, "row(s)");
+
+  // ── get_group_member_profiles shape + ordering check ─────────────────────
+  const { data: profileRows, error: eProfiles } = await a.rpc("get_group_member_profiles", { p_group_id: gid });
+  if (eProfiles || !Array.isArray(profileRows) || profileRows.length === 0) {
+    fail("get_group_member_profiles returned no rows or errored", eProfiles);
+  }
+  for (const row of profileRows) {
+    if (typeof row.user_id !== "string" || !row.user_id) {
+      fail("get_group_member_profiles: row missing user_id", row);
+    }
+    if (!Object.prototype.hasOwnProperty.call(row, "display_name")) {
+      fail("get_group_member_profiles: row missing display_name key", row);
+    }
+    if (typeof row.player_order !== "number") {
+      fail("get_group_member_profiles: row missing numeric player_order", row);
+    }
+  }
+  // Assert rows are ordered by player_order ascending
+  for (let i = 1; i < profileRows.length; i++) {
+    if (profileRows[i].player_order < profileRows[i - 1].player_order) {
+      fail("get_group_member_profiles: rows not ordered by player_order asc", profileRows);
+    }
+  }
+  console.log("  get_group_member_profiles: OK", profileRows.length, "row(s), ordered");
+
+  console.log("rls-smoke: ALL OK", { groupId: gid, gameId, roundId, invite: realInvite });
 }
 
 main().catch((e) => {

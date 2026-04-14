@@ -10,6 +10,16 @@ export type GameResultsRosterRow = {
   userId: string;
   playerOrder: number;
   email: string;
+  /** When null or empty in UI, fall back to `email`. */
+  displayName: string | null;
+};
+
+export type GroupRosterRow = {
+  userId: string;
+  joinedAt: string;
+  playerOrder: number;
+  email: string;
+  displayName: string | null;
 };
 
 /** Populated only when the latest round is `revealed` — scores and review copy for on-/play results. */
@@ -23,6 +33,7 @@ export type MyGameRevealedDetail = {
 export type MyGameState = {
   viewerId: string;
   email: string;
+  viewerDisplayName: string | null;
   group: { id: string; name: string; inviteCode: string } | null;
   game: {
     id: string;
@@ -44,6 +55,18 @@ export type MyGameState = {
   } | null;
   hasReviewed: boolean;
   revealedDetail: MyGameRevealedDetail | null;
+  /** Current group’s members (join order); null if not in a group. */
+  groupRoster: GroupRosterRow[] | null;
+};
+
+export type GameHistoryItem = {
+  gameId: string;
+  groupId: string;
+  groupName: string;
+  status: string;
+  currentRound: number;
+  maxRounds: number;
+  createdAt: string;
 };
 
 export type GameResultsRound = {
@@ -59,6 +82,7 @@ export type GameResultsRound = {
 export type GameResultsData = {
   viewerId: string;
   email: string;
+  viewerDisplayName: string | null;
   group: { name: string; inviteCode: string } | null;
   game: {
     id: string;
@@ -77,14 +101,23 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
   } = await supabase.auth.getUser();
   if (!user) return actionErr("unauthorized", "Sign in required.");
 
+  const { data: viewerProf } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const viewerDisplayName = (viewerProf?.display_name as string | null) ?? null;
+
   const empty: MyGameState = {
     viewerId: user.id,
     email: user.email ?? user.id,
+    viewerDisplayName,
     group: null,
     game: null,
     round: null,
     hasReviewed: false,
     revealedDetail: null,
+    groupRoster: null,
   };
 
   const { data: membership } = await supabase
@@ -105,6 +138,26 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
   if (gErr) return fromPostgrestError(gErr as PostgrestError);
   if (!group) return ok(empty);
 
+  type GroupMemberRpcRow = {
+    user_id: string;
+    email: string;
+    display_name: string | null;
+    joined_at: string;
+    player_order: number;
+  };
+  const { data: groupRpcRows, error: groupRpcErr } = await supabase.rpc(
+    "get_group_member_profiles",
+    { p_group_id: group.id }
+  );
+  if (groupRpcErr) return fromPostgrestError(groupRpcErr as PostgrestError);
+  const groupRoster: GroupRosterRow[] = ((groupRpcRows ?? []) as GroupMemberRpcRow[]).map((row) => ({
+    userId: row.user_id,
+    joinedAt: row.joined_at,
+    playerOrder: row.player_order,
+    email: row.email ?? row.user_id,
+    displayName: row.display_name,
+  }));
+
   const { data: game, error: gameErr } = await supabase
     .from("games")
     .select("id, status, current_round, host_id, max_rounds, auto_advance")
@@ -118,22 +171,25 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
     return ok({
       ...empty,
       group: { id: group.id, name: group.name, inviteCode: group.invite_code },
+      groupRoster,
     });
   }
 
-  // Fetch roster + emails for every request (used for playerCount and display names).
-  type EmailRow = { user_id: string; email: string };
-  const { data: emailRows, error: emailErr } = await supabase.rpc(
-    "get_game_member_emails",
-    { p_game_id: game.id }
-  );
+  // Fetch roster + emails + display names for every request (used for playerCount and labels).
+  type GameMemberRpcRow = { user_id: string; email: string; display_name: string | null };
+  const { data: emailRows, error: emailErr } = await supabase.rpc("get_game_member_emails", {
+    p_game_id: game.id,
+  });
   if (emailErr) return fromPostgrestError(emailErr as PostgrestError);
 
-  const emailMap = new Map<string, string>();
-  for (const row of (emailRows ?? []) as EmailRow[]) {
-    emailMap.set(row.user_id, row.email ?? row.user_id);
+  const memberByUser = new Map<string, { email: string; displayName: string | null }>();
+  for (const row of (emailRows ?? []) as GameMemberRpcRow[]) {
+    memberByUser.set(row.user_id, {
+      email: row.email ?? row.user_id,
+      displayName: row.display_name,
+    });
   }
-  const playerCount = emailMap.size;
+  const playerCount = memberByUser.size;
 
   const { data: rosterBase, error: rosterBaseErr } = await supabase
     .from("game_members")
@@ -142,11 +198,16 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
   if (rosterBaseErr) return fromPostgrestError(rosterBaseErr as PostgrestError);
 
   const rosterWithEmails: GameResultsRosterRow[] = (rosterBase ?? [])
-    .map((row) => ({
-      userId: row.user_id as string,
-      playerOrder: row.player_order as number,
-      email: emailMap.get(row.user_id as string) ?? row.user_id as string,
-    }))
+    .map((row) => {
+      const uid = row.user_id as string;
+      const m = memberByUser.get(uid);
+      return {
+        userId: uid,
+        playerOrder: row.player_order as number,
+        email: m?.email ?? uid,
+        displayName: m?.displayName ?? null,
+      };
+    })
     .sort((a, b) => a.playerOrder - b.playerOrder);
 
   const { data: round, error: roundErr } = await supabase
@@ -201,7 +262,9 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
   return ok({
     viewerId: user.id,
     email: user.email ?? user.id,
+    viewerDisplayName,
     group: { id: group.id, name: group.name, inviteCode: group.invite_code },
+    groupRoster,
     game: {
       id: game.id,
       status: game.status,
@@ -234,9 +297,17 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
   } = await supabase.auth.getUser();
   if (!user) return actionErr("unauthorized", "Sign in required.");
 
+  const { data: viewerProfResults } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  const viewerDisplayName = (viewerProfResults?.display_name as string | null) ?? null;
+
   const empty: GameResultsData = {
     viewerId: user.id,
     email: user.email ?? user.id,
+    viewerDisplayName,
     group: null,
     game: null,
     roster: [],
@@ -277,17 +348,19 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
     });
   }
 
-  // Fetch emails via security-definer RPC so we can display names.
-  type EmailRow = { user_id: string; email: string };
+  type GameMemberRpcRowResults = { user_id: string; email: string; display_name: string | null };
   const { data: emailRowsResults, error: emailErrResults } = await supabase.rpc(
     "get_game_member_emails",
     { p_game_id: game.id }
   );
   if (emailErrResults) return fromPostgrestError(emailErrResults as PostgrestError);
 
-  const emailMapResults = new Map<string, string>();
-  for (const row of (emailRowsResults ?? []) as EmailRow[]) {
-    emailMapResults.set(row.user_id, row.email ?? row.user_id);
+  const memberMapResults = new Map<string, { email: string; displayName: string | null }>();
+  for (const row of (emailRowsResults ?? []) as GameMemberRpcRowResults[]) {
+    memberMapResults.set(row.user_id, {
+      email: row.email ?? row.user_id,
+      displayName: row.display_name,
+    });
   }
 
   const { data: rosterRows, error: rosterErr } = await supabase
@@ -297,11 +370,16 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
   if (rosterErr) return fromPostgrestError(rosterErr as PostgrestError);
 
   const roster: GameResultsRosterRow[] = (rosterRows ?? [])
-    .map((row) => ({
-      userId: row.user_id as string,
-      playerOrder: row.player_order as number,
-      email: emailMapResults.get(row.user_id as string) ?? row.user_id as string,
-    }))
+    .map((row) => {
+      const uid = row.user_id as string;
+      const m = memberMapResults.get(uid);
+      return {
+        userId: uid,
+        playerOrder: row.player_order as number,
+        email: m?.email ?? uid,
+        displayName: m?.displayName ?? null,
+      };
+    })
     .sort((a, b) => a.playerOrder - b.playerOrder);
 
   const { data: roundRows, error: roundsErr } = await supabase
@@ -356,6 +434,7 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
   return ok({
     viewerId: user.id,
     email: user.email ?? user.id,
+    viewerDisplayName,
     group: { name: group.name, inviteCode: group.invite_code },
     game: {
       id: game.id,
@@ -366,6 +445,34 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
     roster,
     rounds,
   });
+}
+
+export async function updateProfileDisplayName(
+  displayName: string
+): Promise<ActionResult<{ displayName: string | null }>> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return actionErr("unauthorized", "Sign in required.");
+
+  const trimmed = displayName.trim();
+  const stored = trimmed.length === 0 ? null : trimmed;
+  if (stored && stored.length > 80) {
+    return actionErr("invalid_input", "Display name must be 80 characters or fewer.");
+  }
+
+  const { error } = await supabase.from("profiles").upsert(
+    {
+      user_id: user.id,
+      display_name: stored,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  );
+
+  if (error) return fromPostgrestError(error as PostgrestError);
+  return ok({ displayName: stored });
 }
 
 export async function createGroup(name: string): Promise<ActionResult<{ groupId: string; inviteCode: string }>> {
@@ -529,6 +636,120 @@ export async function submitAlbum(
 
   if (error) return fromPostgrestError(error);
   return ok({ roundId: data as string });
+}
+
+export type GroupMembershipItem = {
+  groupId: string;
+  groupName: string;
+  inviteCode: string;
+  joinedAt: string;
+  /** Number of current members in the group. Used to warn before leaving as last member. */
+  memberCount: number;
+};
+
+/** Returns all groups the signed-in user belongs to, newest join first. */
+export async function getMyGroups(): Promise<ActionResult<GroupMembershipItem[]>> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return actionErr("unauthorized", "Sign in required.");
+
+  const { data: rows, error } = await supabase
+    .from("group_members")
+    .select("group_id, joined_at, groups(name, invite_code)")
+    .eq("user_id", user.id)
+    .order("joined_at", { ascending: false });
+
+  if (error) return fromPostgrestError(error as PostgrestError);
+
+  type GroupMemberRow = {
+    group_id: string;
+    joined_at: string;
+    groups: { name: string; invite_code: string } | { name: string; invite_code: string }[] | null;
+  };
+
+  const parsed = (rows ?? []) as unknown as GroupMemberRow[];
+  const groupIds = parsed.map((r) => r.group_id);
+
+  // Count members per group (used to warn when leaving as the last member).
+  const memberCountMap = new Map<string, number>();
+  if (groupIds.length > 0) {
+    const { data: countRows } = await supabase
+      .from("group_members")
+      .select("group_id")
+      .in("group_id", groupIds);
+    for (const cr of (countRows ?? []) as { group_id: string }[]) {
+      memberCountMap.set(cr.group_id, (memberCountMap.get(cr.group_id) ?? 0) + 1);
+    }
+  }
+
+  const items: GroupMembershipItem[] = parsed.map((r) => {
+    const g = Array.isArray(r.groups) ? r.groups[0] : r.groups;
+    return {
+      groupId: r.group_id,
+      groupName: g?.name ?? "Unknown group",
+      inviteCode: g?.invite_code ?? "",
+      joinedAt: r.joined_at,
+      memberCount: memberCountMap.get(r.group_id) ?? 1,
+    };
+  });
+
+  return ok(items);
+}
+
+/** Returns up to 20 games the caller has played in, newest first. */
+export async function getMyGameHistory(): Promise<ActionResult<GameHistoryItem[]>> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return actionErr("unauthorized", "Sign in required.");
+
+  // Get all game IDs this user belongs to (RLS scoped to caller).
+  const { data: memberRows, error: memberErr } = await supabase
+    .from("game_members")
+    .select("game_id")
+    .eq("user_id", user.id);
+  if (memberErr) return fromPostgrestError(memberErr as PostgrestError);
+
+  const gameIds = (memberRows ?? []).map((r) => r.game_id as string);
+  if (gameIds.length === 0) return ok([]);
+
+  // Fetch games + group names (RLS: only games the user is a member of).
+  const { data: gamesData, error: gamesErr } = await supabase
+    .from("games")
+    .select("id, status, current_round, max_rounds, created_at, group_id, groups(name)")
+    .in("id", gameIds)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (gamesErr) return fromPostgrestError(gamesErr as PostgrestError);
+
+  type GameRow = {
+    id: string;
+    status: string;
+    current_round: number;
+    max_rounds: number;
+    created_at: string;
+    group_id: string;
+    // PostgREST returns FK-to-one joins as a single object, not an array.
+    groups: { name: string } | { name: string }[] | null;
+  };
+
+  const history: GameHistoryItem[] = ((gamesData ?? []) as unknown as GameRow[]).map((g) => {
+    const grp = Array.isArray(g.groups) ? g.groups[0] : g.groups;
+    return {
+      gameId: g.id,
+      groupId: g.group_id,
+      groupName: grp?.name ?? "Unknown group",
+      status: g.status,
+      currentRound: g.current_round,
+      maxRounds: g.max_rounds,
+      createdAt: g.created_at,
+    };
+  });
+
+  return ok(history);
 }
 
 export async function submitReview(
