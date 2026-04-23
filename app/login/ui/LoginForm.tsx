@@ -2,7 +2,9 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { mapSupabaseAuthErrorMessage } from "@/lib/mania/mapAuthError";
 import { createBrowserSupabaseClient } from "@/lib/supabaseClient";
+import { sanitizeNextPath } from "@/lib/mania/url";
 
 type Props = {
   nextPath: string;
@@ -23,12 +25,12 @@ export function LoginForm({ nextPath }: Props) {
       const supabase = createBrowserSupabaseClient();
       const { error: signError } = await supabase.auth.signInWithPassword({ email, password });
       if (signError) {
-        setError(signError.message);
+        setError(mapSupabaseAuthErrorMessage(signError.message, "Could not sign you in."));
         setLoading(false);
         return;
       }
       router.refresh();
-      router.push(nextPath);
+      router.push(sanitizeNextPath(nextPath, "/account"));
     } catch {
       setError("Something went wrong.");
       setLoading(false);

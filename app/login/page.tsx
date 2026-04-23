@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { sanitizeNextPath } from "@/lib/mania/url";
 import { LoginForm } from "./ui/LoginForm";
 
 type Props = {
@@ -7,7 +8,7 @@ type Props = {
 
 export default async function LoginPage(props: Props) {
   const searchParams = (await props.searchParams) ?? {};
-  const nextPath = searchParams.next ?? "/account";
+  const nextPath = sanitizeNextPath(searchParams.next, "/account");
 
   return (
     <main className="mx-auto flex max-w-sm flex-col gap-8 px-6 py-16">

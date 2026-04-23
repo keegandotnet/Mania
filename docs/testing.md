@@ -13,12 +13,18 @@ Requires `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env
 The script now also asserts:
 - **`get_game_member_emails`**: returns rows with `user_id`, `email`, and `display_name` (nullable) for each game member.
 - **`get_group_member_profiles`**: returns group rows ordered by `player_order` ascending.
+- **`submit_album`** rejects unsafe album links such as `javascript:` URLs before a valid `https://` link is accepted.
 
 ---
 
 ## Manual UI checklist
 
 Scenarios that must stay green as the codebase grows:
+
+## Auth / redirects
+
+- [ ] **Local auth redirects:** Supabase auth works from both `http://localhost:3000` and `http://127.0.0.1:3000` during development.
+- [ ] **Safe `next` redirects:** `/login?next=/play` and `/auth/callback?next=/account` return users to the intended page, while unsafe values such as `javascript:alert(1)` or `//evil.com` fall back to `/account`.
 
 ## Manual UI (Play / Results)
 
@@ -30,6 +36,7 @@ Scenarios that must stay green as the codebase grows:
 - [ ] **`/play` with revealed round:** page stays on Play (no server redirect to `/results`); per-round results card and nav link to Results remain available. Client may still navigate to `/results` after submitting the last review or on Refresh when a round becomes revealed.
 - [ ] **Multiline reviews:** submit a review with **newlines**; confirm they **persist** and **render** on Play and Results (`whitespace-pre-wrap` / wrapping as implemented).
 - [ ] **Long review text:** no **horizontal** layout breakage or overflow in typical viewports on Play and Results.
+- [ ] **Album link validation:** submitting an album with an unsafe or malformed link (for example `javascript:alert(1)` or `notaurl`) is rejected with a clear validation message; valid absolute `http://` / `https://` links still save and open normally.
 - [ ] **Host round control panel visibility:** hidden while round is `awaiting_album` or `awaiting_reviews`; visible when no round exists or round is `revealed`.
 - [ ] **Round limit locked:** round limit input and Save button are absent once `currentRound > 0`; a read-only display shows the locked value.
 - [ ] **Min rounds = player count:** round limit input has `min={playerCount}`; saving a value below player count shows an error.

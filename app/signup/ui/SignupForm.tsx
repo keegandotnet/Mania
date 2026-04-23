@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { mapSupabaseAuthErrorMessage } from "@/lib/mania/mapAuthError";
 import { createBrowserSupabaseClient } from "@/lib/supabaseClient";
 
 export function SignupForm() {
@@ -31,7 +32,7 @@ export function SignupForm() {
         },
       });
       if (signError) {
-        setError(signError.message);
+        setError(mapSupabaseAuthErrorMessage(signError.message, "Could not create your account."));
         setLoading(false);
         return;
       }

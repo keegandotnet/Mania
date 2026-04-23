@@ -4,6 +4,7 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { actionErr, ok, type ActionResult } from "@/lib/mania/actionResult";
 import { generateInviteCode } from "@/lib/mania/invite";
 import { fromPostgrestError } from "@/lib/mania/mapSupabaseError";
+import { normalizeOptionalHttpUrl } from "@/lib/mania/url";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 export type GameResultsRosterRow = {
@@ -219,6 +220,8 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
     .maybeSingle();
   if (roundErr) return fromPostgrestError(roundErr as PostgrestError);
 
+  const normalizedCurrentRoundUrl = normalizeOptionalHttpUrl(round?.album_url ?? null);
+
   let hasReviewed = false;
   if (round?.status === "awaiting_reviews") {
     const { data: review } = await supabase
@@ -281,7 +284,7 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
           status: round.status as "awaiting_album" | "awaiting_reviews" | "revealed",
           albumName: round.album_name,
           artistName: round.artist_name,
-          albumUrl: round.album_url,
+          albumUrl: normalizedCurrentRoundUrl.ok ? normalizedCurrentRoundUrl.value : null,
           isPicker: round.created_by === user.id,
         }
       : null,
@@ -421,15 +424,18 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
     reviewsByRound.set(rid, list);
   }
 
-  const rounds: GameResultsRound[] = roundsList.map((row) => ({
-    id: row.id as string,
-    roundNumber: row.round_number as number,
-    albumName: row.album_name as string | null,
-    artistName: row.artist_name as string | null,
-    albumUrl: row.album_url as string | null,
-    pickerId: row.created_by as string,
-    reviews: reviewsByRound.get(row.id as string) ?? [],
-  }));
+  const rounds: GameResultsRound[] = roundsList.map((row) => {
+    const normalizedAlbumUrl = normalizeOptionalHttpUrl((row.album_url as string | null) ?? null);
+    return {
+      id: row.id as string,
+      roundNumber: row.round_number as number,
+      albumName: row.album_name as string | null,
+      artistName: row.artist_name as string | null,
+      albumUrl: normalizedAlbumUrl.ok ? normalizedAlbumUrl.value : null,
+      pickerId: row.created_by as string,
+      reviews: reviewsByRound.get(row.id as string) ?? [],
+    };
+  });
 
   return ok({
     viewerId: user.id,
@@ -626,12 +632,16 @@ export async function submitAlbum(
   if (!albumName.trim() || !artistName.trim()) {
     return actionErr("invalid_input", "Album name and artist are required.");
   }
+  const normalizedAlbumUrl = normalizeOptionalHttpUrl(albumUrl);
+  if (!normalizedAlbumUrl.ok) {
+    return actionErr("invalid_album_url", normalizedAlbumUrl.message);
+  }
 
   const { data, error } = await supabase.rpc("submit_album", {
     p_game_id: gameId,
     p_album_name: albumName,
     p_artist_name: artistName,
-    p_album_url: albumUrl,
+    p_album_url: normalizedAlbumUrl.value ?? "",
   });
 
   if (error) return fromPostgrestError(error);

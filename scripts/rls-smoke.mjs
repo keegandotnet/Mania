@@ -19,6 +19,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { randomInt } from "node:crypto";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -36,6 +37,7 @@ const password2 = process.env.RLS_SMOKE_PASSWORD_B ?? process.env.RLS_SMOKE_PASS
 const email1 = process.env.RLS_SMOKE_EMAIL_A ?? `mania.smoke.a.${suffix}@maniasmoke.test`;
 const email2 = process.env.RLS_SMOKE_EMAIL_B ?? `mania.smoke.b.${suffix}@maniasmoke.test`;
 const reuseAccounts = !!(process.env.RLS_SMOKE_EMAIL_A && process.env.RLS_SMOKE_EMAIL_B);
+const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 function anonClient() {
   return createClient(url, anon);
@@ -98,10 +100,9 @@ async function main() {
   }
   if (err) fail("User A sign-in failed after admin provisioning:", err);
 
-  const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";
   for (let i = 0; i < 6; i++) {
-    code += ALPHABET[Math.floor(Math.random() * ALPHABET.length)];
+    code += ALPHABET[randomInt(ALPHABET.length)];
   }
 
   const { data: gid, error: e1 } = await a.rpc("create_group_with_owner", {
@@ -137,11 +138,21 @@ async function main() {
   const { data: roundId, error: e4 } = await a.rpc("start_next_round", { p_game_id: gameId });
   if (e4 || !roundId) fail("start_next_round", e4);
 
+  const { error: eInvalidAlbumUrl } = await a.rpc("submit_album", {
+    p_game_id: gameId,
+    p_album_name: "Dummy Album",
+    p_artist_name: "Dummy Artist",
+    p_album_url: "javascript:alert(1)",
+  });
+  if (!eInvalidAlbumUrl || !/invalid_album_url/i.test(eInvalidAlbumUrl.message)) {
+    fail("submit_album should reject unsafe album URLs", eInvalidAlbumUrl ?? "missing invalid_album_url");
+  }
+
   const { data: ridAlbum, error: e5 } = await a.rpc("submit_album", {
     p_game_id: gameId,
     p_album_name: "Dummy Album",
     p_artist_name: "Dummy Artist",
-    p_album_url: "",
+    p_album_url: "https://example.com/dummy-album",
   });
   if (e5 || ridAlbum !== roundId) fail("submit_album (host / submitter)", e5);
 

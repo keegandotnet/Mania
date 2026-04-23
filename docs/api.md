@@ -167,8 +167,8 @@ Resolves **the same "my latest group" + "latest game in that group"** as `getMyG
 ### `submitAlbum(gameId, albumName, artistName, albumUrl)`
 
 - **Returns:** `{ roundId: string }` on success.
-- **Validation:** trimmed album and artist names required; else `invalid_input`.
-- **Backend:** RPC `submit_album` (URL passed through as provided).
+- **Validation:** trimmed album and artist names required; else `invalid_input`. `albumUrl` is optional, but when present it must be a valid absolute `http://` or `https://` URL; otherwise `invalid_album_url`.
+- **Backend:** RPC `submit_album` (DB also rejects unsafe / malformed `album_url` values).
 
 ### `submitReview(roundId: string, rating: number, reviewText: string)`
 

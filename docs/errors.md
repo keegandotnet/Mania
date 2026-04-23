@@ -38,6 +38,7 @@ Actions return a discriminated result `{ ok: true, ... } | { ok: false, code, me
 | `not_your_turn`           | Caller is not `rounds.created_by`. |
 | `round_wrong_status`      | Album submitted when round not `awaiting_album`, etc. |
 | `duplicate_album`         | Unique index on normalized album per game violated. |
+| `invalid_album_url`       | Album link is present but not a valid absolute `http://` / `https://` URL. |
 
 ## Reviews
 
@@ -52,7 +53,7 @@ Actions return a discriminated result `{ ok: true, ... } | { ok: false, code, me
 
 | code          | When |
 |---------------|------|
-| `db_error`    | Unexpected Supabase / Postgres error. |
+| `db_error`    | Unexpected Supabase / Postgres error. User sees a generic message; raw details stay in server logs. |
 | `invalid_input` | Missing or empty required fields (e.g. group name, album fields). |
 | `invite_collision` | Rare: could not generate a unique 6-character code after retries. |
 | `duplicate_key` | Unique constraint violated (non-review, non-album cases). |

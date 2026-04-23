@@ -13,6 +13,12 @@
 ## Sessions (Next.js)
 
 - Next.js **16** refreshes Supabase cookies in root `proxy.ts` (the file convention formerly named `middleware`). Matcher skips static assets and `_next/*`; see comments in `proxy.ts`.
+- Post-auth redirects (`/login?next=...`, `/auth/callback?next=...`) are sanitized to root-relative internal paths before navigation.
+
+## Headers
+
+- `next.config.ts` sets baseline browser security headers for every route: `Referrer-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `Permissions-Policy`.
+- A stricter CSP is still worth considering later, but the current headers provide low-risk protection without breaking local development.
 
 ## Row Level Security (RLS)
 
@@ -23,6 +29,8 @@
 - **Results read path:** `getGameResults` loads `rounds` (status `revealed` only) and `reviews` with plain `SELECT` under the session JWT. Access is RLS-scoped to game members.
 - **Roster read paths:** `get_game_member_emails` (game members) and `get_group_member_profiles` (group members) are security-definer RPCs that join `auth.users` and `public.profiles`. Each checks that `auth.uid()` is a member of the same game or group before returning rows.
 - **`profiles` RLS:** Users may `SELECT` their own row and rows for users who share a group with them (`group_members` join). `INSERT`/`UPDATE` only for `user_id = auth.uid()`. Table and RPC changes land in migration `20260402100000_profiles_display_names.sql` (including `handle_new_user` on `auth.users`); the original email-only RPC shape was introduced in `20250402140000_email_and_min_rounds.sql`.
+- **Album URLs:** `submit_album` now rejects unsafe or malformed links. Stored values must be blank / `NULL` or absolute `http://` / `https://` URLs.
+- **Unexpected DB errors:** unknown PostgREST / Postgres details are logged server-side and returned to the UI as a generic error instead of raw internals.
 
 ## SECURITY DEFINER RPCs (trust boundary)
 
@@ -36,7 +44,7 @@ Each RPC uses `security definer` with `search_path = public`, revokes `PUBLIC`, 
 | `update_game_max_rounds` | Host-only; blocked after first round starts; enforces min = player count. |
 | `update_game_auto_advance` | Host-only auto-advance flag update. |
 | `start_next_round` | Caller must be host; locks and advances round state; errors if advancing would pass `max_rounds`. |
-| `submit_album` | Caller must be active round submitter. |
+| `submit_album` | Caller must be active round submitter; optional `album_url` must be blank / `NULL` or absolute `http://` / `https://`. |
 | `submit_review` | Caller must be non-submitter game member; rating bounds enforced. |
 | `get_game_member_emails` | Returns `(user_id, email, display_name)` for all game members; caller must be a game member. |
 | `get_group_member_profiles` | Returns group roster with emails, display names, join timestamps, and `player_order`; caller must be a group member. |
@@ -47,4 +55,5 @@ Each RPC uses `security definer` with `search_path = public`, revokes `PUBLIC`, 
 
 ## Invite codes
 
-- Treat invite codes as **secrets** for the group; rate-limit joins in production if abuse appears.
+- Invite codes are generated with cryptographically secure randomness.
+- Treat invite codes as **secrets** for the group; rate-limit joins before public launch, not only after abuse appears.

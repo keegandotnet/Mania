@@ -18,6 +18,7 @@ import {
   submitReview,
 } from "@/app/actions/mania";
 import { memberLabel } from "@/lib/mania/memberLabel";
+import { normalizeOptionalHttpUrl } from "@/lib/mania/url";
 
 type Props = { initialState: MyGameState };
 
@@ -608,8 +609,18 @@ export function PlayShell({ initialState }: Props) {
             className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40"
             onClick={() => {
               setAlbumFb(null);
+              const normalizedAlbumUrl = normalizeOptionalHttpUrl(albumUrl);
+              if (!normalizedAlbumUrl.ok) {
+                setAlbumFb({ kind: "error", message: normalizedAlbumUrl.message });
+                return;
+              }
               startTransition(async () => {
-                const r = await submitAlbum(gameId, albumName, artistName, albumUrl);
+                const r = await submitAlbum(
+                  gameId,
+                  albumName,
+                  artistName,
+                  normalizedAlbumUrl.value ?? ""
+                );
                 if (!r.ok) {
                   setAlbumFb({ kind: "error", message: r.message });
                   return;

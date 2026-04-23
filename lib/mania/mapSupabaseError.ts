@@ -27,6 +27,7 @@ const RPC_MESSAGES: Record<string, string> = {
   submitter_not_found: "Could not assign the next player.",
   no_round_awaiting_album: "No round is waiting for an album.",
   not_your_turn: "Only the assigned player can submit the album.",
+  invalid_album_url: "Album link must be a valid absolute http:// or https:// URL.",
   round_not_found: "Round not found.",
   round_not_reviewable: "This round is not accepting reviews.",
   cannot_self_review: "You cannot review your own album.",
@@ -58,5 +59,12 @@ export function fromPostgrestError(error: PostgrestError): ActionResult<never> {
     return actionErr("duplicate_key", "A unique constraint was violated.");
   }
 
-  return actionErr("db_error", error.message);
+  console.error("Unhandled Supabase/PostgREST error", {
+    code: error.code,
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+  });
+
+  return actionErr("db_error", "Something went wrong. Please try again.");
 }
