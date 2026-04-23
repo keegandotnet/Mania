@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { mapSupabaseAuthErrorMessage } from "@/lib/mania/mapAuthError";
+import { mapClientErrorMessage } from "@/lib/mania/mapClientError";
 import { createBrowserSupabaseClient } from "@/lib/supabaseClient";
 import { sanitizeNextPath } from "@/lib/mania/url";
 
@@ -31,8 +32,9 @@ export function LoginForm({ nextPath }: Props) {
       }
       router.refresh();
       router.push(sanitizeNextPath(nextPath, "/account"));
-    } catch {
-      setError("Something went wrong.");
+    } catch (error) {
+      console.error("Login failed", error);
+      setError(mapClientErrorMessage(error, "Something went wrong."));
       setLoading(false);
     }
   }

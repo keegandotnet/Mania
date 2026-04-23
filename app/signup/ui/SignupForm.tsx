@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { mapSupabaseAuthErrorMessage } from "@/lib/mania/mapAuthError";
+import { mapClientErrorMessage } from "@/lib/mania/mapClientError";
 import { createBrowserSupabaseClient } from "@/lib/supabaseClient";
 
 export function SignupForm() {
@@ -39,8 +40,9 @@ export function SignupForm() {
       setInfo("Check your email to confirm your account, or sign in if confirmation is disabled.");
       setLoading(false);
       router.refresh();
-    } catch {
-      setError("Something went wrong.");
+    } catch (error) {
+      console.error("Signup failed", error);
+      setError(mapClientErrorMessage(error, "Something went wrong."));
       setLoading(false);
     }
   }

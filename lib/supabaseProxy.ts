@@ -1,14 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import { hasSupabasePublicEnv, getSupabasePublicEnv } from "@/lib/supabaseEnv";
 
 /** Refreshes the Supabase Auth session; cookie handling matches `lib/supabaseServer.ts`. */
 export async function updateSession(request: NextRequest) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
+  if (!hasSupabasePublicEnv()) {
     return NextResponse.next({ request });
   }
+  const { url, anonKey } = getSupabasePublicEnv();
 
   let response = NextResponse.next({ request });
 

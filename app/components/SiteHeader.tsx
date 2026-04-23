@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { hasSupabasePublicEnv } from "@/lib/supabaseEnv";
 
 export async function SiteHeader() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+
+  if (hasSupabasePublicEnv()) {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
+  }
 
   return (
     <header className="flex items-center justify-between border-b border-black/10 px-6 py-4 dark:border-white/15">
