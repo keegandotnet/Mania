@@ -14,34 +14,62 @@ export async function SiteHeader() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-black/10 px-6 py-4 dark:border-white/15">
-      <Link href="/" className="text-lg font-semibold tracking-tight text-foreground hover:opacity-80">
-        Mania
-      </Link>
-      <nav className="flex items-center gap-6 text-sm font-medium">
-        {user ? (
-          <>
-            <Link href="/play" className="text-foreground hover:opacity-80">
-              Play
-            </Link>
-            <Link href="/results" className="text-foreground hover:opacity-80">
-              Results
-            </Link>
-            <Link href="/account" className="text-foreground hover:opacity-80">
-              Account
-            </Link>
-          </>
-        ) : (
-          <>
-            <Link href="/login" className="text-foreground hover:opacity-80">
-              Sign in
-            </Link>
-            <Link href="/signup" className="text-foreground hover:opacity-80">
-              Sign up
-            </Link>
-          </>
-        )}
-      </nav>
+    <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+        <Link
+          href="/"
+          className="flex min-w-0 items-center gap-3 text-foreground transition-opacity hover:opacity-85"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-accent-orange/30 bg-accent-orange text-sm font-semibold text-white shadow-sm">
+            M
+          </span>
+          <span className="min-w-0">
+            <span className="block text-lg font-semibold tracking-tight">Mania</span>
+            <span className="block text-xs text-foreground-secondary">
+              Album night, scored properly
+            </span>
+          </span>
+        </Link>
+        <nav className="flex items-center gap-2 text-sm font-medium sm:gap-3">
+          {user ? (
+            <>
+              <Link
+                href="/play"
+                className="rounded-full px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
+              >
+                Play
+              </Link>
+              <Link
+                href="/results"
+                className="rounded-full px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
+              >
+                Results
+              </Link>
+              <Link
+                href="/account"
+                className="rounded-full border border-border bg-surface px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
+              >
+                Account
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-full px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/signup"
+                className="rounded-full bg-accent-orange px-4 py-2 text-white transition-colors hover:bg-accent-orange-hover"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
+        </nav>
+      </div>
     </header>
   );
 }

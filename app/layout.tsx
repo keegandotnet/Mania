@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Mania",
-  description: "Mania MVP",
+  description: "Private album-rating nights with rounds, reveals, reviews, and scoreboards.",
 };
 
 export default async function RootLayout({
