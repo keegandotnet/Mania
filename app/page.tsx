@@ -18,22 +18,107 @@ export default async function Home() {
   const secondaryHref = user ? "/account" : "/login";
   const secondaryLabel = user ? "Manage Account" : "Sign In";
 
+  const signals = [
+    {
+      title: "One album, one conversation",
+      body: "Everyone spends the week with the same record, so the discussion actually builds.",
+      className: "border-accent-pink/35 bg-accent-pink/14",
+      eyebrowClassName: "text-accent-pink-fg",
+    },
+    {
+      title: "Notes first, scores second",
+      body: "Written reactions keep it thoughtful before the averages flatten everything.",
+      className: "border-accent-yellow/45 bg-accent-yellow/18",
+      eyebrowClassName: "text-accent-yellow-fg",
+    },
+    {
+      title: "A table worth checking",
+      body: "Each reveal shifts the standings and gives the group a reason to come back.",
+      className: "border-accent-lime/35 bg-accent-lime/14",
+      eyebrowClassName: "text-accent-lime-fg",
+    },
+  ];
+
+  const standings = [
+    { place: "01", name: "Nina", score: "9.2" },
+    { place: "02", name: "Theo", score: "8.8" },
+    { place: "03", name: "Avery", score: "8.4" },
+  ];
+
+  const steps = [
+    {
+      step: "01",
+      title: "Pick the next album",
+      body: "One member chooses the record. Everyone else gets the same prompt and the same window to live with it.",
+      className: "border-accent-peach/40 bg-accent-peach/14",
+      badgeClassName: "bg-accent-peach/70 text-accent-peach-fg",
+    },
+    {
+      step: "02",
+      title: "Write in the margins",
+      body: "Players score the album, but the real fun is the note-taking, hot takes, and specific receipts.",
+      className: "border-accent-pink/35 bg-accent-pink/14",
+      badgeClassName: "bg-accent-pink/55 text-accent-pink-fg",
+    },
+    {
+      step: "03",
+      title: "Reveal the room",
+      body: "When the last review lands, Mania opens the round, shows the averages, and updates the club table.",
+      className: "border-accent-lime/35 bg-accent-lime/14",
+      badgeClassName: "bg-accent-lime/60 text-accent-lime-fg",
+    },
+  ];
+
+  const features = [
+    {
+      title: "Private by default",
+      body: "Invite only the people whose opinions you actually want in the room.",
+      className: "border-accent-yellow/45 bg-accent-yellow/18",
+      eyebrowClassName: "text-accent-yellow-fg",
+    },
+    {
+      title: "Async works better",
+      body: "No one has to be online at once. The round stays clean even when schedules do not.",
+      className: "border-accent-lime/35 bg-accent-lime/14",
+      eyebrowClassName: "text-accent-lime-fg",
+    },
+    {
+      title: "Reviews have memory",
+      body: "Every album keeps its scores and commentary, so the club builds a real archive.",
+      className: "border-accent-pink/35 bg-accent-pink/14",
+      eyebrowClassName: "text-accent-pink-fg",
+    },
+    {
+      title: "Competitive enough",
+      body: "The scoreboard gives the room stakes without turning the whole thing into homework.",
+      className: "border-accent-peach/40 bg-accent-peach/14",
+      eyebrowClassName: "text-accent-peach-fg",
+    },
+  ];
+
   return (
     <main className="relative flex-1 overflow-hidden">
-      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[36rem] bg-[radial-gradient(circle_at_top_left,rgba(249,115,22,0.2),transparent_36%),radial-gradient(circle_at_85%_10%,rgba(250,204,21,0.16),transparent_28%),linear-gradient(180deg,rgba(255,255,255,0.55),rgba(255,255,255,0))] dark:bg-[radial-gradient(circle_at_top_left,rgba(251,146,60,0.22),transparent_36%),radial-gradient(circle_at_85%_10%,rgba(253,224,71,0.16),transparent_28%),linear-gradient(180deg,rgba(20,20,18,0.6),rgba(20,20,18,0))]" />
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -left-20 top-6 h-72 w-72 rounded-full bg-accent-pink/35 blur-3xl" />
+        <div className="absolute right-[-4rem] top-24 h-72 w-72 rounded-full bg-accent-yellow/28 blur-3xl" />
+        <div className="absolute left-1/3 top-[26rem] h-64 w-64 rounded-full bg-accent-lime/30 blur-3xl" />
+        <div className="absolute bottom-[-5rem] right-12 h-72 w-72 rounded-full bg-accent-peach/30 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-[30rem] bg-gradient-to-b from-surface/80 via-background/50 to-transparent" />
+      </div>
+
       <section className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-4 py-10 sm:px-6 sm:py-16">
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] lg:gap-12">
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(320px,0.95fr)] lg:gap-12">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-accent-orange/20 bg-accent-orange/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-accent-orange-fg">
-              Private Album Rating Game
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent-pink/35 bg-accent-pink/14 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-accent-pink-fg">
+              Private listening club
             </div>
-            <h1 className="mt-6 text-5xl font-semibold tracking-tight text-balance sm:text-6xl">
-              Album night, rebuilt as a competitive ritual.
+            <h1 className="mt-6 max-w-4xl text-5xl font-semibold tracking-tight text-balance sm:text-6xl">
+              The book club for albums.
             </h1>
             <p className="mt-6 max-w-prose text-base leading-7 text-foreground-secondary sm:text-lg">
-              Mania is a private, turn-based game for groups who want more than a
-              shared playlist. Pick an album, write the review, reveal the scores,
-              and let the leaderboard settle the argument.
+              Pick one record at a time. Everyone listens on their own schedule,
+              writes a real take, drops a score, and waits for the reveal. Mania
+              makes album talk feel structured, social, and just competitive enough.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -50,93 +135,119 @@ export default async function Home() {
               </Link>
             </div>
             <div className="mt-10 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl border border-border bg-surface/90 p-4 shadow-sm">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  Async Rounds
-                </p>
-                <p className="mt-2 text-sm leading-6 text-foreground-secondary">
-                  Your group can play on its own schedule. No one needs to be online at once.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface/90 p-4 shadow-sm">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  Reviews Matter
-                </p>
-                <p className="mt-2 text-sm leading-6 text-foreground-secondary">
-                  Every pick gets a score and a written take, not just a passive thumbs-up.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-border bg-surface/90 p-4 shadow-sm">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  Reveals & Results
-                </p>
-                <p className="mt-2 text-sm leading-6 text-foreground-secondary">
-                  Rounds resolve into rankings, reviews, and bragging rights.
-                </p>
-              </div>
+              {signals.map((signal) => (
+                <article
+                  key={signal.title}
+                  className={`rounded-[28px] border p-4 shadow-sm ${signal.className}`}
+                >
+                  <p
+                    className={`text-xs font-medium uppercase tracking-[0.16em] ${signal.eyebrowClassName}`}
+                  >
+                    Why it works
+                  </p>
+                  <h2 className="mt-3 text-lg font-semibold tracking-tight text-foreground">
+                    {signal.title}
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-foreground-secondary">
+                    {signal.body}
+                  </p>
+                </article>
+              ))}
             </div>
           </div>
 
           <div className="relative">
-            <div className="absolute -left-6 top-8 h-32 w-32 rounded-full bg-accent-yellow/20 blur-3xl" />
-            <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-accent-orange/20 blur-3xl" />
-            <div className="relative space-y-4">
-              <div className="rounded-[28px] border border-accent-orange/40 bg-surface p-5 shadow-sm ring-1 ring-accent-orange/15">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <article className="sm:col-span-2 rounded-[32px] border border-border bg-surface p-6 shadow-sm">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-orange-fg">
-                      Your Turn
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                      This week&apos;s read
                     </p>
-                    <h2 className="mt-2 text-xl font-semibold tracking-tight">
-                      Round 03: Submit your album
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+                      Hounds of Love
                     </h2>
+                    <p className="mt-1 text-sm text-foreground-secondary">
+                      Kate Bush
+                    </p>
                   </div>
                   <span className="rounded-full bg-accent-orange px-3 py-1 text-xs font-medium text-white">
-                    Live
+                    Your turn
                   </span>
                 </div>
-                <div className="mt-5 rounded-2xl border border-border bg-surface-raised p-4">
-                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                    Pick Window
+                <div className="mt-5 rounded-[26px] border border-border bg-surface-raised p-5">
+                  <div className="flex items-center justify-between gap-4 text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                    <span>Discussion window</span>
+                    <span>Closes Friday</span>
+                  </div>
+                  <p className="mt-4 max-w-prose text-sm leading-7 text-foreground-secondary">
+                    Post the album, let everyone sit with it, then watch the room
+                    sort itself out once the last score comes in.
                   </p>
-                  <p className="mt-2 text-lg font-semibold tracking-tight">
-                    Hounds of Love
-                  </p>
-                  <p className="text-sm text-foreground-secondary">Kate Bush</p>
-                  <div className="mt-4 flex items-center gap-2">
-                    <span className="rounded-full bg-accent-yellow/70 px-2 py-1 text-xs font-medium text-accent-yellow-fg">
-                      5 reviews pending
-                    </span>
-                    <span className="rounded-full bg-surface px-2 py-1 text-xs font-medium text-foreground-secondary">
-                      Reveal after last score
-                    </span>
+                </div>
+                <div className="mt-5 flex items-center justify-between gap-4 text-sm text-foreground-secondary">
+                  <span>5 readers checked in</span>
+                  <span>Reveal after final score</span>
+                </div>
+              </article>
+
+              <article className="rounded-[28px] border border-accent-pink/35 bg-accent-pink/14 p-5 shadow-sm">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-pink-fg">
+                  Margin notes
+                </p>
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-2xl border border-surface/70 bg-surface/80 p-3">
+                    <p className="text-sm font-medium text-foreground">
+                      &quot;Side A is all restraint. Side B kicks the door in.&quot;
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-surface/70 bg-surface/80 p-3">
+                    <p className="text-sm font-medium text-foreground">
+                      &quot;The hooks are huge, but the weirdness is the point.&quot;
+                    </p>
                   </div>
                 </div>
-              </div>
+              </article>
 
-              <div className="rounded-[28px] border border-border bg-surface p-5 shadow-sm">
+              <article className="rounded-[28px] border border-accent-lime/35 bg-accent-lime/14 p-5 shadow-sm">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-lime-fg">
+                  Club notes
+                </p>
+                <div className="mt-4 space-y-3">
+                  <div className="rounded-2xl border border-surface/70 bg-surface/85 p-3">
+                    <p className="text-sm font-semibold text-foreground">6 players</p>
+                    <p className="mt-1 text-sm text-foreground-secondary">
+                      Tight enough for strong opinions, small enough to stay personal.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-surface/70 bg-surface/85 p-3">
+                    <p className="text-sm font-semibold text-foreground">1 album each round</p>
+                    <p className="mt-1 text-sm text-foreground-secondary">
+                      Less feed, more focus.
+                    </p>
+                  </div>
+                </div>
+              </article>
+
+              <article className="sm:col-span-2 rounded-[28px] border border-accent-yellow/45 bg-accent-yellow/18 p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                      League Table
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-yellow-fg">
+                      Current table
                     </p>
-                    <h2 className="mt-2 text-xl font-semibold tracking-tight">
-                      Current Leaders
+                    <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground">
+                      The room remembers everything
                     </h2>
                   </div>
-                  <span className="rounded-full bg-accent-green/15 px-3 py-1 text-xs font-medium text-accent-green-fg">
+                  <span className="rounded-full bg-surface/85 px-3 py-1 text-xs font-medium text-foreground-secondary">
                     Round revealed
                   </span>
                 </div>
                 <div className="mt-5 space-y-3">
-                  {[
-                    { place: "01", name: "Nina", score: "8.9", tone: "bg-accent-yellow/70 text-accent-yellow-fg" },
-                    { place: "02", name: "Theo", score: "8.6", tone: "bg-accent-green/15 text-accent-green-fg" },
-                    { place: "03", name: "Avery", score: "8.2", tone: "bg-surface-raised text-foreground" },
-                  ].map((entry) => (
+                  {standings.map((entry) => (
                     <div
                       key={entry.place}
-                      className="flex items-center justify-between rounded-2xl border border-border bg-surface-raised px-4 py-3"
+                      className="flex items-center justify-between rounded-2xl border border-surface/70 bg-surface/85 px-4 py-3"
                     >
                       <div className="flex items-center gap-3">
                         <span className="font-mono text-xs text-foreground-secondary">
@@ -144,13 +255,13 @@ export default async function Home() {
                         </span>
                         <span className="text-sm font-medium text-foreground">{entry.name}</span>
                       </div>
-                      <span className={`rounded-full px-3 py-1 text-sm font-semibold ${entry.tone}`}>
+                      <span className="rounded-full bg-accent-yellow/70 px-3 py-1 text-sm font-semibold text-accent-yellow-fg">
                         {entry.score}
                       </span>
                     </div>
                   ))}
                 </div>
-              </div>
+              </article>
             </div>
           </div>
         </div>
@@ -158,62 +269,48 @@ export default async function Home() {
         <section className="space-y-6">
           <div className="max-w-2xl">
             <p className="text-xs font-medium uppercase tracking-[0.18em] text-foreground-secondary">
-              How It Works
+              How a round flows
             </p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-              Three steps from first pick to final standings.
+              Three steps from fresh pick to full-room verdict.
             </h2>
           </div>
           <div className="grid gap-4 lg:grid-cols-3">
-            {[
-              {
-                step: "01",
-                title: "Create a private group",
-                body: "Spin up a room, invite up to six players, and lock in the people whose opinions should count.",
-              },
-              {
-                step: "02",
-                title: "Take turns picking albums",
-                body: "Each round belongs to one picker. Everyone else scores the album and leaves a real written review.",
-              },
-              {
-                step: "03",
-                title: "Reveal the round",
-                body: "Once the reviews are in, Mania exposes the averages, the commentary, and the current pecking order.",
-              },
-            ].map((item) => (
+            {steps.map((step) => (
               <article
-                key={item.step}
-                className="rounded-[28px] border border-border bg-surface p-6 shadow-sm"
+                key={step.step}
+                className={`rounded-[30px] border p-6 shadow-sm ${step.className}`}
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-raised font-mono text-sm text-foreground-secondary">
-                  {item.step}
+                <div
+                  className={`inline-flex rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.16em] ${step.badgeClassName}`}
+                >
+                  Step {step.step}
                 </div>
-                <h3 className="mt-5 text-xl font-semibold tracking-tight">{item.title}</h3>
+                <h3 className="mt-5 text-xl font-semibold tracking-tight text-foreground">
+                  {step.title}
+                </h3>
                 <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
-                  {item.body}
+                  {step.body}
                 </p>
               </article>
             ))}
           </div>
         </section>
 
-        <section className="rounded-[32px] border border-border bg-surface px-6 py-8 shadow-sm sm:px-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-foreground-secondary">
-                Built for the reveal
-              </p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight">
-                More scorecard than playlist.
-              </h2>
-              <p className="mt-4 max-w-prose text-sm leading-7 text-foreground-secondary">
-                Mania is for groups that want album discussion to feel structured,
-                social, and a little ruthless. The point is not background listening.
-                The point is seeing what survives the scoreboard.
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          <div className="rounded-[32px] border border-border bg-surface px-6 py-8 shadow-sm sm:px-8">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-foreground-secondary">
+              Why Mania
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight">
+              More intentional than a playlist, less stiff than a review club.
+            </h2>
+            <p className="mt-4 max-w-prose text-sm leading-7 text-foreground-secondary">
+              The best album conversations happen when a group shares context,
+              has enough time to really listen, and knows a reveal is coming.
+              Mania gives that process a shape without sanding off the personality.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 href={primaryHref}
                 className="rounded-md bg-accent-orange px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-orange-hover"
@@ -227,6 +324,27 @@ export default async function Home() {
                 View Results Flow
               </Link>
             </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {features.map((feature) => (
+              <article
+                key={feature.title}
+                className={`rounded-[28px] border p-5 shadow-sm ${feature.className}`}
+              >
+                <p
+                  className={`text-xs font-medium uppercase tracking-[0.16em] ${feature.eyebrowClassName}`}
+                >
+                  Built for the group
+                </p>
+                <h3 className="mt-3 text-lg font-semibold tracking-tight text-foreground">
+                  {feature.title}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-foreground-secondary">
+                  {feature.body}
+                </p>
+              </article>
+            ))}
           </div>
         </section>
       </section>

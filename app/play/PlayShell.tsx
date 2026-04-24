@@ -6,36 +6,71 @@ import { useState, useTransition } from "react";
 import {
   type GroupRosterRow,
   type MyGameState,
-  getMyGameState,
+  createGame,
   createGroup,
+  getMyGameState,
   joinGroup,
   leaveGroup,
-  createGame,
-  updateGameMaxRounds,
-  updateGameAutoAdvance,
   startNextRound,
   submitAlbum,
   submitReview,
+  updateGameAutoAdvance,
+  updateGameMaxRounds,
 } from "@/app/actions/mania";
 import { memberLabel } from "@/lib/mania/memberLabel";
 import { normalizeOptionalHttpUrl } from "@/lib/mania/url";
 
 type Props = { initialState: MyGameState };
+type FeedbackState = { kind: "error" | "ok"; message: string } | null;
+type Tone = "neutral" | "orange" | "yellow" | "green" | "pink" | "lime" | "peach";
 
-// ---------------------------------------------------------------------------
-// Status banner
-// ---------------------------------------------------------------------------
+const surfaceCardClass =
+  "rounded-[30px] border border-border bg-surface p-5 shadow-sm";
+const subtleCardClass =
+  "rounded-[26px] border border-border bg-surface-raised/65 p-4 shadow-sm";
+const inputClass =
+  "rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none placeholder:text-foreground-secondary focus:border-border-strong disabled:opacity-50";
+const textareaClass =
+  "min-h-24 rounded-md border border-border bg-surface px-3 py-2 text-sm leading-relaxed text-foreground outline-none placeholder:text-foreground-secondary focus:border-border-strong disabled:opacity-50";
+const primaryButtonClass =
+  "rounded-md bg-accent-orange px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-orange-hover disabled:opacity-40";
+const secondaryButtonClass =
+  "rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised disabled:opacity-40";
+const destructiveButtonClass =
+  "rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-40";
 
-function statusFor(state: MyGameState): { title: string; detail: string; urgent: boolean } {
+function cx(...values: Array<string | false | null | undefined>) {
+  return values.filter(Boolean).join(" ");
+}
+
+function statusFor(state: MyGameState): {
+  eyebrow: string;
+  title: string;
+  detail: string;
+  tone: Tone;
+  tag: string;
+  urgent: boolean;
+} {
   const { group, game, round, hasReviewed } = state;
 
   if (!group) {
-    return { title: "No group yet", detail: "Create a group or join one with an invite code below.", urgent: false };
+    return {
+      eyebrow: "Welcome",
+      title: "No group yet",
+      detail: "Create a group or join one with an invite code to get your club started.",
+      tone: "pink",
+      tag: "Setup",
+      urgent: false,
+    };
   }
+
   if (!game) {
     return {
-      title: `In group "${group.name}"`,
-      detail: `Invite: ${group.inviteCode}. Once everyone has joined, create a game. Whoever creates the game is the host for that game.`,
+      eyebrow: "Club ready",
+      title: `You're in ${group.name}`,
+      detail: `Invite code ${group.inviteCode}. Once everyone is in, create a game and start the first round.`,
+      tone: "lime",
+      tag: "No game",
       urgent: false,
     };
   }
@@ -44,11 +79,14 @@ function statusFor(state: MyGameState): { title: string; detail: string; urgent:
 
   if (game.status === "completed") {
     const last = round?.albumName
-      ? `Last pick: "${round.albumName}"${round.artistName ? ` by ${round.artistName}` : ""}.`
+      ? `Last pick: "${round.albumName}"${round.artistName ? ` by ${round.artistName}` : ""}. `
       : "";
     return {
+      eyebrow: "Finished",
       title: "Game complete",
-      detail: `${last} Final scoreboard and next steps are below.`,
+      detail: `${last}Open the scoreboard for the full table, then decide whether to start another run.`,
+      tone: "yellow",
+      tag: "Complete",
       urgent: false,
     };
   }
@@ -56,14 +94,21 @@ function statusFor(state: MyGameState): { title: string; detail: string; urgent:
   if (!round) {
     if (game.isHost) {
       return {
-        title: "Game ready \u2014 no rounds yet",
-        detail: `Up to ${game.maxRounds} rounds. Press \u201cStart round\u201d to kick things off.`,
+        eyebrow: "Host desk",
+        title: "Game ready to start",
+        detail: `You control the round limit and kickoff. ${cap} begins once you start round one.`,
+        tone: "orange",
+        tag: "Action",
         urgent: true,
       };
     }
+
     return {
-      title: "Game ready \u2014 no rounds yet",
-      detail: "Waiting for the host to start the first round.",
+      eyebrow: "Waiting room",
+      title: "Game created, first round pending",
+      detail: "The host has not started the first round yet.",
+      tone: "neutral",
+      tag: "Waiting",
       urgent: false,
     };
   }
@@ -71,96 +116,159 @@ function statusFor(state: MyGameState): { title: string; detail: string; urgent:
   if (round.status === "awaiting_album") {
     if (round.isPicker) {
       return {
-        title: `${cap} — your pick`,
-        detail: "It's your turn to submit an album for everyone to review.",
+        eyebrow: cap,
+        title: "Your pick is due",
+        detail: "Choose the album, add the artist, and set the round in motion.",
+        tone: "orange",
+        tag: "Your turn",
         urgent: true,
       };
     }
+
     return {
-      title: `${cap} — waiting for album`,
-      detail: "The picker hasn't chosen an album yet. Check back soon.",
+      eyebrow: cap,
+      title: "Waiting for the pick",
+      detail: "The round exists, but the picker has not posted the album yet.",
+      tone: "peach",
+      tag: "Waiting",
       urgent: false,
     };
   }
 
   if (round.status === "awaiting_reviews") {
     const albumLabel = `"${round.albumName}" by ${round.artistName}`;
+
     if (round.isPicker) {
       return {
-        title: `${cap} — awaiting reviews`,
-        detail: `You submitted ${albumLabel}. Waiting for the others to review.`,
+        eyebrow: cap,
+        title: "Your pick is out for review",
+        detail: `${albumLabel} is live. Now the room listens and writes back.`,
+        tone: "lime",
+        tag: "Submitted",
         urgent: false,
       };
     }
+
     if (!hasReviewed) {
       return {
-        title: `${cap} — leave your review`,
-        detail: `${albumLabel} is up. Rate it below.`,
+        eyebrow: cap,
+        title: "Leave your review",
+        detail: `${albumLabel} is waiting on your score and notes.`,
+        tone: "orange",
+        tag: "Your turn",
         urgent: true,
       };
     }
+
     return {
-      title: `${cap} — waiting for others`,
-      detail: `You reviewed ${albumLabel}. Waiting for the rest of the group.`,
+      eyebrow: cap,
+      title: "Review sent",
+      detail: `You already reviewed ${albumLabel}. Waiting for the rest of the room.`,
+      tone: "green",
+      tag: "Submitted",
       urgent: false,
     };
   }
 
-  // revealed
-  const albumLabel = `"${round.albumName}" by ${round.artistName}`;
-  if (game.isHost) {
-    const autoHint =
-      game.autoAdvance && game.currentRound < game.maxRounds
-        ? " After the last review, the next round starts automatically until the round limit."
-        : "";
-    return {
-      title: `${cap} — revealed`,
-      detail: `${albumLabel}. Press "Start next round" when you are ready.${autoHint}`,
-      urgent: !game.autoAdvance,
-    };
-  }
   return {
-    title: `${cap} — revealed`,
-    detail: `${albumLabel}. ${game.autoAdvance && game.currentRound < game.maxRounds ? "The host can start the next round early, or it will begin automatically after the last review." : "Waiting for the host to start the next round."}`,
+    eyebrow: cap,
+    title: "Round revealed",
+    detail: game.isHost
+      ? "Scores are in. Start the next round when the room is ready."
+      : "Scores are in. Waiting for the host to move the club forward.",
+    tone: "yellow",
+    tag: "Revealed",
     urgent: false,
   };
 }
 
 function averageRating(reviews: { rating: number }[]): number | null {
   if (reviews.length === 0) return null;
-  const sum = reviews.reduce((s, r) => s + r.rating, 0);
+  const sum = reviews.reduce((total, review) => total + review.rating, 0);
   return Math.round((sum / reviews.length) * 10) / 10;
 }
 
-function groupMemberLabel(viewerId: string, userId: string, roster: GroupRosterRow[]): string {
+function scoreToneClass(rating: number) {
+  if (rating >= 8.5) return "bg-accent-lime/60 text-accent-lime-fg";
+  if (rating >= 7) return "bg-accent-yellow/70 text-accent-yellow-fg";
+  if (rating >= 5) return "bg-accent-peach/60 text-accent-peach-fg";
+  return "bg-accent-pink/55 text-accent-pink-fg";
+}
+
+function scoreLabel(rating: number) {
+  if (rating >= 9) return "All timer";
+  if (rating >= 8) return "Strong yes";
+  if (rating >= 7) return "Works on me";
+  if (rating >= 6) return "Mixed bag";
+  if (rating >= 4) return "Not landing";
+  return "Hard no";
+}
+
+function wordCount(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return 0;
+  return trimmed.split(/\s+/).length;
+}
+
+function groupMemberLabel(viewerId: string, userId: string, roster: GroupRosterRow[]) {
   return memberLabel(viewerId, userId, roster);
 }
 
-// ---------------------------------------------------------------------------
-// Inline feedback helpers
-// ---------------------------------------------------------------------------
-
-type FeedbackState = { kind: "error" | "ok"; message: string } | null;
-
-function Feedback({ fb }: { fb: FeedbackState }) {
-  if (!fb) return null;
-  return (
-    <p
-      role={fb.kind === "error" ? "alert" : "status"}
-      className={
-        fb.kind === "error"
-          ? "text-sm text-red-600 dark:text-red-400"
-          : "text-sm text-foreground/70"
-      }
-    >
-      {fb.message}
-    </p>
-  );
+function toneCardClass(tone: Tone) {
+  switch (tone) {
+    case "orange":
+      return "border-accent-orange/45 bg-accent-orange/10 ring-1 ring-accent-orange/15";
+    case "yellow":
+      return "border-accent-yellow/45 bg-accent-yellow/18";
+    case "green":
+      return "border-accent-green/35 bg-accent-green/10";
+    case "pink":
+      return "border-accent-pink/35 bg-accent-pink/12";
+    case "lime":
+      return "border-accent-lime/35 bg-accent-lime/12";
+    case "peach":
+      return "border-accent-peach/40 bg-accent-peach/12";
+    default:
+      return "border-border bg-surface";
+  }
 }
 
-// ---------------------------------------------------------------------------
-// Main shell
-// ---------------------------------------------------------------------------
+function toneBadgeClass(tone: Tone) {
+  switch (tone) {
+    case "orange":
+      return "bg-accent-orange text-white";
+    case "yellow":
+      return "bg-accent-yellow/75 text-accent-yellow-fg";
+    case "green":
+      return "bg-accent-green/15 text-accent-green-fg";
+    case "pink":
+      return "bg-accent-pink/55 text-accent-pink-fg";
+    case "lime":
+      return "bg-accent-lime/60 text-accent-lime-fg";
+    case "peach":
+      return "bg-accent-peach/60 text-accent-peach-fg";
+    default:
+      return "bg-surface-raised text-foreground-secondary";
+  }
+}
+
+function Feedback({ fb }: { fb: FeedbackState }) {
+  return (
+    <div className="min-h-6">
+      {fb ? (
+        <p
+          role={fb.kind === "error" ? "alert" : "status"}
+          className={cx(
+            "text-sm",
+            fb.kind === "error" ? "text-red-600 dark:text-red-400" : "text-foreground-secondary"
+          )}
+        >
+          {fb.message}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export function PlayShell({ initialState }: Props) {
   const router = useRouter();
@@ -174,9 +282,9 @@ export function PlayShell({ initialState }: Props) {
   const [reviewFb, setReviewFb] = useState<FeedbackState>(null);
   const [maxRoundsFb, setMaxRoundsFb] = useState<FeedbackState>(null);
   const [autoAdvanceFb, setAutoAdvanceFb] = useState<FeedbackState>(null);
+  const [leaveFb, setLeaveFb] = useState<FeedbackState>(null);
 
   const [leaveConfirm, setLeaveConfirm] = useState(false);
-  const [leaveFb, setLeaveFb] = useState<FeedbackState>(null);
   const [groupName, setGroupName] = useState("");
   const [joinInvite, setJoinInvite] = useState("");
   const [albumName, setAlbumName] = useState("");
@@ -189,23 +297,23 @@ export function PlayShell({ initialState }: Props) {
   );
 
   const { group, game, round, hasReviewed, viewerId, revealedDetail } = state;
-  const { title, detail, urgent } = statusFor(state);
+  const status = statusFor(state);
 
   function refresh(prevRoundStatus?: string) {
     startTransition(async () => {
-      const r = await getMyGameState();
-      if (r.ok) {
-        setState(r.data);
-        if (r.data.game?.maxRounds != null) {
-          setMaxRoundsDraft(String(r.data.game.maxRounds));
-        }
-        // Navigate to /results when the round transitions to revealed while on /play.
-        if (
-          r.data.round?.status === "revealed" &&
-          prevRoundStatus !== "revealed"
-        ) {
-          router.push("/results");
-        }
+      const result = await getMyGameState();
+      if (!result.ok) return;
+
+      setState(result.data);
+      if (result.data.game?.maxRounds != null) {
+        setMaxRoundsDraft(String(result.data.game.maxRounds));
+      }
+
+      if (
+        result.data.round?.status === "revealed" &&
+        prevRoundStatus !== "revealed"
+      ) {
+        router.push("/results");
       }
     });
   }
@@ -234,7 +342,6 @@ export function PlayShell({ initialState }: Props) {
     round.status === "awaiting_reviews" &&
     !round.isPicker &&
     !hasReviewed;
-
   const showHostRoundControl =
     !!game?.isHost &&
     game.status !== "completed" &&
@@ -244,79 +351,124 @@ export function PlayShell({ initialState }: Props) {
     revealedDetail && revealedDetail.reviews.length > 0
       ? averageRating(revealedDetail.reviews)
       : null;
+  const parsedRating = Number.parseFloat(rating);
+  const ratingValue = Number.isFinite(parsedRating) ? parsedRating : 0;
+  const reviewWords = wordCount(reviewText);
+
+  const quickFacts = [
+    {
+      label: "Identity",
+      value: state.viewerDisplayName?.trim() || state.email,
+      tone: "pink" as const,
+    },
+    {
+      label: "Group",
+      value: group?.name ?? "Not joined yet",
+      tone: "lime" as const,
+    },
+    {
+      label: "Invite",
+      value: group?.inviteCode ?? "------",
+      tone: "yellow" as const,
+    },
+    {
+      label: "Round",
+      value: game ? `${game.currentRound}/${game.maxRounds}` : "Not started",
+      tone: "peach" as const,
+    },
+  ];
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      {/* Identity */}
-      <p className="text-xs text-foreground/50">
-        Signed in as{" "}
-        <span className="text-foreground/80">
-          {state.viewerDisplayName?.trim() || state.email}
-        </span>
-        {state.viewerDisplayName?.trim() ? (
-          <span className="mt-0.5 block font-mono text-[0.7rem] text-foreground/45">
-            {state.email}
-          </span>
-        ) : null}
-      </p>
+      <section className={cx("rounded-[34px] p-6 shadow-sm", toneCardClass(status.tone))}>
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-foreground-secondary">
+                {status.eyebrow}
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+                {status.title}
+              </h2>
+              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
+                {status.detail}
+              </p>
+            </div>
 
-      {/* Status banner */}
-      <div
-        className={`rounded-lg border p-4 ${
-          urgent
-            ? "border-foreground/40 bg-foreground/5"
-            : "border-black/10 dark:border-white/15"
-        }`}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold">{title}</p>
-            <p className="mt-0.5 text-sm text-foreground/70">{detail}</p>
-            {game && game.status !== "completed" ? (
-              <p className="mt-2 text-xs">
-                <Link
-                  href="/results"
-                  className="font-medium text-foreground underline-offset-2 hover:underline"
-                >
-                  View round results
-                </Link>{" "}
-                <span className="text-foreground/45">(revealed rounds and scores)</span>
-              </p>
-            ) : null}
-            {game && game.status === "completed" ? (
-              <p className="mt-2 text-xs">
-                <Link
-                  href="/results"
-                  className="font-medium text-foreground underline-offset-2 hover:underline"
-                >
-                  View final scores
-                </Link>
-              </p>
+            <div className="flex items-center gap-3">
+              <span
+                className={cx(
+                  "rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.16em]",
+                  toneBadgeClass(status.tone)
+                )}
+              >
+                {status.tag}
+              </span>
+              <button
+                type="button"
+                onClick={() => refresh(round?.status)}
+                disabled={pending}
+                className={secondaryButtonClass}
+              >
+                {pending ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {quickFacts.map((fact) => (
+              <div
+                key={fact.label}
+                className={cx("rounded-[24px] border p-4", toneCardClass(fact.tone))}
+              >
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                  {fact.label}
+                </p>
+                <p className="mt-2 break-words text-sm font-semibold text-foreground">
+                  {fact.value}
+                </p>
+                {fact.label === "Identity" && state.viewerDisplayName?.trim() ? (
+                  <p className="mt-1 break-all font-mono text-xs text-foreground-secondary">
+                    {state.email}
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap gap-3 text-sm">
+            {(game || revealedDetail) && (
+              <Link href="/results" className={secondaryButtonClass}>
+                View results
+              </Link>
+            )}
+            <Link href="/account" className={secondaryButtonClass}>
+              Manage account
+            </Link>
+            {status.urgent ? (
+              <span className="rounded-full bg-surface/75 px-3 py-2 text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                Needs your action
+              </span>
             ) : null}
           </div>
-          <button
-            type="button"
-            onClick={() => refresh(round?.status)}
-            disabled={pending}
-            className="shrink-0 text-xs text-foreground/50 underline-offset-2 hover:text-foreground hover:underline disabled:opacity-40"
-          >
-            {pending ? "…" : "Refresh"}
-          </button>
         </div>
-      </div>
+      </section>
 
       {game?.status === "completed" ? (
-        <section className="rounded-lg border border-foreground/25 bg-foreground/[0.04] p-4 dark:border-white/25 dark:bg-white/[0.04]">
-          <h2 className="text-sm font-semibold">Game over</h2>
-          <p className="mt-1 text-sm text-foreground/75">
-            Every round has finished. Open the scoreboard for the full history, then use Setup below to start a new
-            game or exit the group.
+        <section className={cx(surfaceCardClass, "border-accent-yellow/45 bg-accent-yellow/10")}>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-yellow-fg">
+            Finished run
           </p>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium">
-            <Link href="/results" className="text-foreground underline-offset-2 hover:underline">
+          <h2 className="mt-3 text-xl font-semibold tracking-tight">This game is wrapped.</h2>
+          <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
+            Every round is complete. Use the scoreboard for the full history, then
+            start a new game from the setup section when your group is ready.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link href="/results" className={secondaryButtonClass}>
               View final scores
             </Link>
-            <Link href="/account" className="text-foreground/80 underline-offset-2 hover:underline">
+            <Link href="/account" className={secondaryButtonClass}>
               Edit display name
             </Link>
           </div>
@@ -324,46 +476,58 @@ export function PlayShell({ initialState }: Props) {
       ) : null}
 
       {group && state.groupRoster && state.groupRoster.length > 0 ? (
-        <section className="rounded-lg border border-black/10 p-4 dark:border-white/15">
-          <h2 className="text-sm font-semibold">Group members</h2>
-          <p className="mt-0.5 text-xs text-foreground/50">Join order (first joined first)</p>
-          <ol className="mt-3 list-decimal space-y-1.5 pl-5 text-sm text-foreground/90">
-            {state.groupRoster.map((m) => (
-              <li key={m.userId} className="marker:text-foreground/40">
-                <span className="font-medium">{groupMemberLabel(viewerId, m.userId, state.groupRoster!)}</span>
-                {m.displayName?.trim() ? (
-                  <span className="ml-2 font-mono text-xs text-foreground/45">{m.email}</span>
-                ) : null}
-              </li>
+        <section className={surfaceCardClass}>
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                Club roster
+              </p>
+              <h2 className="mt-2 text-xl font-semibold tracking-tight">Who is in the room</h2>
+            </div>
+            <p className="text-xs text-foreground-secondary">
+              {state.groupRoster.length} member{state.groupRoster.length === 1 ? "" : "s"}
+            </p>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {state.groupRoster.map((member, index) => (
+              <div
+                key={member.userId}
+                className="rounded-[24px] border border-border bg-surface-raised/70 p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-mono text-xs text-foreground-secondary">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  {member.userId === viewerId ? (
+                    <span className="rounded-full bg-accent-pink/55 px-2 py-1 text-xs font-medium text-accent-pink-fg">
+                      You
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-3 text-sm font-semibold text-foreground">
+                  {groupMemberLabel(viewerId, member.userId, state.groupRoster)}
+                </p>
+                <p className="mt-1 break-all text-xs text-foreground-secondary">
+                  {member.email}
+                </p>
+              </div>
             ))}
-          </ol>
+          </div>
         </section>
       ) : null}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Latest revealed round — scores & reviews (timely per-round UX)     */}
-      {/* ------------------------------------------------------------------ */}
       {revealedDetail && game && game.status !== "completed" && round?.status === "revealed" ? (
-        <section className="flex min-w-0 flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
-          <h2 className="text-sm font-semibold">
-            Round {revealedDetail.roundNumber} results
-          </h2>
-          {round.albumName ? (
-            <div className="min-w-0 space-y-1 border-b border-black/10 pb-3 dark:border-white/10">
-              <p className="break-words text-sm text-foreground/90">
-                <span className="font-medium">{round.albumName}</span>
-                {round.artistName ? (
-                  <>
-                    {" "}
-                    <span className="text-foreground/80">by {round.artistName}</span>
-                  </>
-                ) : null}
+        <section className={cx(surfaceCardClass, "border-accent-yellow/45 bg-accent-yellow/10")}>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-yellow-fg">
+                Round {revealedDetail.roundNumber} revealed
               </p>
-              <p className="text-xs text-foreground/50">
-                Picked by{" "}
-                <span className="text-foreground/70">
-                  {memberLabel(viewerId, revealedDetail.pickerId, revealedDetail.roster)}
-                </span>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+                {round.albumName}
+              </h2>
+              <p className="mt-2 text-sm text-foreground-secondary">
+                {round.artistName}
                 {round.albumUrl ? (
                   <>
                     {" "}
@@ -371,428 +535,632 @@ export function PlayShell({ initialState }: Props) {
                       href={round.albumUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline underline-offset-2"
+                      className="font-medium text-foreground underline-offset-4 hover:underline"
                     >
                       Open link
                     </a>
                   </>
                 ) : null}
               </p>
-              {playRoundAvg != null ? (
-                <p className="text-sm font-medium text-foreground/80">
-                  Average score: {playRoundAvg.toFixed(1)} / 10
-                </p>
-              ) : null}
+              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
+                Picked by{" "}
+                <span className="font-medium text-foreground">
+                  {memberLabel(viewerId, revealedDetail.pickerId, revealedDetail.roster)}
+                </span>
+                . Every score and note from the room is open now.
+              </p>
             </div>
-          ) : null}
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:w-[26rem] lg:grid-cols-1 xl:grid-cols-3">
+              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                  Average
+                </p>
+                <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                  {playRoundAvg != null ? playRoundAvg.toFixed(1) : "--"}
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                  Reviews
+                </p>
+                <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                  {revealedDetail.reviews.length}
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                  Mood
+                </p>
+                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                  {playRoundAvg != null ? scoreLabel(playRoundAvg) : "No verdict"}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {revealedDetail.reviews.length === 0 ? (
-            <p className="text-sm text-foreground/60">
-              No reviews recorded (round was advanced early).
+            <p className="mt-5 text-sm text-foreground-secondary">
+              No reviews were recorded for this round.
             </p>
           ) : (
-            <ul className="flex min-w-0 flex-col gap-3">
-              {revealedDetail.reviews.map((rev) => (
+            <ul className="mt-5 grid gap-3">
+              {revealedDetail.reviews.map((review) => (
                 <li
-                  key={`${round.id}-${rev.userId}`}
-                  className="min-w-0 rounded-md bg-foreground/5 px-3 py-2 dark:bg-white/5"
+                  key={`${round.id}-${review.userId}`}
+                  className="rounded-[24px] border border-surface/70 bg-surface/85 p-4"
                 >
-                  <div className="flex min-w-0 flex-wrap items-baseline justify-between gap-2">
-                    <span className="text-sm font-medium">
-                      {memberLabel(viewerId, rev.userId, revealedDetail.roster)}
-                    </span>
-                    <span className="shrink-0 font-mono text-sm tabular-nums text-foreground/80">
-                      {rev.rating.toFixed(1)} / 10
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-foreground">
+                          {memberLabel(viewerId, review.userId, revealedDetail.roster)}
+                        </span>
+                        <span
+                          className={cx(
+                            "rounded-full px-2 py-1 text-xs font-medium uppercase tracking-[0.16em]",
+                            scoreToneClass(review.rating)
+                          )}
+                        >
+                          {scoreLabel(review.rating)}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={cx(
+                        "shrink-0 rounded-full px-3 py-1 font-mono text-sm",
+                        scoreToneClass(review.rating)
+                      )}
+                    >
+                      {review.rating.toFixed(1)} / 10
                     </span>
                   </div>
-                  {rev.reviewText.trim() ? (
+                  {review.reviewText.trim() ? (
                     <p
-                      className="mt-1 min-w-0 whitespace-pre-wrap [overflow-wrap:anywhere] text-sm text-foreground/75"
-                      style={{
-                        whiteSpace: "pre-wrap",
-                        overflowWrap: "anywhere",
-                        wordBreak: "break-word",
-                      }}
+                      className="mt-3 max-w-prose whitespace-pre-wrap text-sm leading-7 text-foreground-secondary [overflow-wrap:anywhere]"
+                      style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word" }}
                     >
-                      {rev.reviewText}
+                      {review.reviewText}
                     </p>
                   ) : (
-                    <p className="mt-1 text-xs italic text-foreground/45">No written review</p>
+                    <p className="mt-3 text-xs italic text-foreground-secondary">
+                      No written review
+                    </p>
                   )}
                 </li>
               ))}
             </ul>
           )}
-          <p className="text-xs text-foreground/45">
-            <Link
-              href="/results"
-              className="font-medium text-foreground underline-offset-2 hover:underline"
-            >
-              All revealed rounds
-            </Link>{" "}
-            <span className="text-foreground/40">(full history)</span>
-          </p>
         </section>
       ) : null}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Host: start / advance round                                         */}
-      {/* ------------------------------------------------------------------ */}
       {showHostRoundControl ? (
-        <section className="flex flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15">
-          <h2 className="text-sm font-semibold">Round control (host only)</h2>
-          <p className="text-xs text-foreground/50">
-            This game runs up to {game.maxRounds} rounds.
-            {game.autoAdvance
-              ? " Auto-advance is on: after the last review in a round, the next round starts automatically (until the limit)."
-              : " Auto-advance is off: you start each new round with the button below."}
+        <section className={cx(surfaceCardClass, "border-accent-peach/40 bg-accent-peach/10")}>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-peach-fg">
+            Host controls
           </p>
-          <label className="flex cursor-pointer items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="size-4 rounded border-black/20 accent-foreground dark:border-white/30"
-              checked={game.autoAdvance}
-              disabled={pending}
-              onChange={(e) => {
-                const next = e.target.checked;
-                setAutoAdvanceFb(null);
-                setState((s) =>
-                  s.game ? { ...s, game: { ...s.game, autoAdvance: next } } : s
-                );
+          <h2 className="mt-2 text-xl font-semibold tracking-tight">Move the club forward</h2>
+          <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
+            Set the round limit before play begins, choose whether rounds auto-advance,
+            and start the next round when the room is ready.
+          </p>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+            <div className={subtleCardClass}>
+              <label className="flex cursor-pointer items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 rounded border-border accent-[var(--accent-orange)]"
+                  checked={game.autoAdvance}
+                  disabled={pending}
+                  onChange={(event) => {
+                    const next = event.target.checked;
+                    setAutoAdvanceFb(null);
+                    setState((current) =>
+                      current.game ? { ...current, game: { ...current.game, autoAdvance: next } } : current
+                    );
+                    startTransition(async () => {
+                      const result = await updateGameAutoAdvance(gameId, next);
+                      if (!result.ok) {
+                        setAutoAdvanceFb({ kind: "error", message: result.message });
+                        refresh();
+                        return;
+                      }
+                      setAutoAdvanceFb({
+                        kind: "ok",
+                        message: next ? "Auto-advance is on." : "Auto-advance is off.",
+                      });
+                      refresh();
+                    });
+                  }}
+                />
+                <span>
+                  <span className="block font-medium text-foreground">
+                    Auto-advance after the last review
+                  </span>
+                  <span className="mt-1 block text-foreground-secondary">
+                    {game.autoAdvance
+                      ? "The next round starts automatically until the round limit is reached."
+                      : "You start every round manually."}
+                  </span>
+                </span>
+              </label>
+              <div className="mt-3">
+                <Feedback fb={autoAdvanceFb} />
+              </div>
+            </div>
+
+            <div className={subtleCardClass}>
+              {game.currentRound === 0 ? (
+                <>
+                  <label className="flex flex-col gap-2 text-sm">
+                    <span className="font-medium text-foreground">
+                      Round limit (minimum {game.playerCount}, maximum 500)
+                    </span>
+                    <input
+                      type="number"
+                      min={game.playerCount}
+                      max={500}
+                      step={1}
+                      value={maxRoundsDraft}
+                      onChange={(event) => setMaxRoundsDraft(event.target.value)}
+                      className={cx(inputClass, "w-32")}
+                    />
+                  </label>
+                  <div className="mt-3 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      disabled={pending}
+                      className={secondaryButtonClass}
+                      onClick={() => {
+                        setMaxRoundsFb(null);
+                        const nextMax = Number.parseInt(maxRoundsDraft, 10);
+                        if (
+                          !Number.isInteger(nextMax) ||
+                          nextMax < game.playerCount ||
+                          nextMax > 500
+                        ) {
+                          setMaxRoundsFb({
+                            kind: "error",
+                            message: `Enter a whole number from ${game.playerCount} to 500.`,
+                          });
+                          return;
+                        }
+                        startTransition(async () => {
+                          const result = await updateGameMaxRounds(gameId, nextMax);
+                          if (!result.ok) {
+                            setMaxRoundsFb({ kind: "error", message: result.message });
+                            return;
+                          }
+                          setMaxRoundsFb({ kind: "ok", message: "Round limit saved." });
+                          refresh();
+                        });
+                      }}
+                    >
+                      Save round limit
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-foreground-secondary">
+                  Round limit is locked at{" "}
+                  <span className="font-semibold text-foreground">{game.maxRounds}</span>{" "}
+                  because play has already started.
+                </p>
+              )}
+
+              <p className="mt-3 text-xs text-foreground-secondary">
+                There must be at least one round per player so everyone gets a pick.
+              </p>
+              <div className="mt-3">
+                <Feedback fb={maxRoundsFb} />
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              disabled={pending || !canStartRound}
+              title={
+                !canStartRound && round?.status === "awaiting_album"
+                  ? "Waiting for the picker to submit an album."
+                  : !canStartRound && round?.status === "awaiting_reviews"
+                    ? "Waiting for every review to come in."
+                    : undefined
+              }
+              className={primaryButtonClass}
+              onClick={() => {
+                setGameFb(null);
                 startTransition(async () => {
-                  const r = await updateGameAutoAdvance(gameId, next);
-                  if (!r.ok) {
-                    setAutoAdvanceFb({ kind: "error", message: r.message });
-                    refresh();
+                  const result = await startNextRound(gameId);
+                  if (!result.ok) {
+                    setGameFb({ kind: "error", message: result.message });
                     return;
                   }
-                  setAutoAdvanceFb({ kind: "ok", message: next ? "Auto-advance on." : "Auto-advance off." });
+                  setGameFb({ kind: "ok", message: "Round started." });
                   refresh();
                 });
               }}
-            />
-            <span className="font-medium">Auto-advance after last review</span>
-          </label>
-          <Feedback fb={autoAdvanceFb} />
-          {game.currentRound === 0 ? (
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-              <label className="flex flex-col gap-1 text-sm">
-                <span className="font-medium">
-                  Round limit (min {game.playerCount}–500)
-                </span>
-                <input
-                  type="number"
-                  min={game.playerCount}
-                  max={500}
-                  step={1}
-                  value={maxRoundsDraft}
-                  onChange={(e) => setMaxRoundsDraft(e.target.value)}
-                  className="w-28 rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none focus:border-foreground/40 dark:border-white/20"
-                />
-              </label>
-              <button
-                type="button"
-                disabled={pending}
-                className="w-fit rounded-md border border-black/15 px-4 py-2 text-sm font-medium dark:border-white/20 disabled:opacity-40"
-                onClick={() => {
-                  setMaxRoundsFb(null);
-                  const n = Number.parseInt(maxRoundsDraft, 10);
-                  if (!Number.isInteger(n) || n < game.playerCount || n > 500) {
-                    setMaxRoundsFb({
-                      kind: "error",
-                      message: `Enter a whole number from ${game.playerCount} to 500.`,
-                    });
-                    return;
-                  }
-                  startTransition(async () => {
-                    const r = await updateGameMaxRounds(gameId, n);
-                    if (!r.ok) {
-                      setMaxRoundsFb({ kind: "error", message: r.message });
-                      return;
-                    }
-                    setMaxRoundsFb({ kind: "ok", message: "Round limit saved." });
-                    refresh();
-                  });
-                }}
-              >
-                Save round limit
-              </button>
-            </div>
-          ) : (
-            <p className="text-sm text-foreground/60">
-              Round limit: <span className="font-semibold text-foreground">{game.maxRounds}</span>
-              <span className="ml-2 text-xs text-foreground/45">(locked once play begins)</span>
-            </p>
-          )}
-          <p className="text-xs text-foreground/45">
-            Minimum {game.playerCount} round{game.playerCount !== 1 ? "s" : ""} — one per player so everyone gets to pick.
-            {game.currentRound === 0
-              ? " Can only be changed before the first round starts."
-              : ""}
-          </p>
-          <Feedback fb={maxRoundsFb} />
-          <button
-            type="button"
-            disabled={pending || !canStartRound}
-            title={
-              !canStartRound && round?.status === "awaiting_album"
-                ? "Waiting for the picker to submit an album"
-                : !canStartRound && round?.status === "awaiting_reviews"
-                ? "Waiting for all reviews"
-                : undefined
-            }
-            className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40"
-            onClick={() => {
-              setGameFb(null);
-              startTransition(async () => {
-                const r = await startNextRound(gameId);
-                if (!r.ok) {
-                  setGameFb({ kind: "error", message: r.message });
-                  return;
-                }
-                setGameFb({ kind: "ok", message: "Round started." });
-                refresh();
-              });
-            }}
-          >
-            {round?.status === "revealed" ? "Start next round" : "Start round"}
-          </button>
-          {!canStartRound && round && (
-            <p className="text-xs text-foreground/50">
-              {round.status === "awaiting_album"
-                ? "Blocked: picker hasn't submitted an album yet."
-                : round.status === "awaiting_reviews"
-                ? "Blocked: still waiting for all reviews."
-                : null}
-            </p>
-          )}
-          <Feedback fb={gameFb} />
+            >
+              {round?.status === "revealed" ? "Start next round" : "Start round"}
+            </button>
+            {!canStartRound && round ? (
+              <span className="text-sm text-foreground-secondary">
+                {round.status === "awaiting_album"
+                  ? "Blocked until the picker posts the album."
+                  : round.status === "awaiting_reviews"
+                    ? "Blocked until every review is in."
+                    : null}
+              </span>
+            ) : null}
+          </div>
+          <div className="mt-3">
+            <Feedback fb={gameFb} />
+          </div>
         </section>
       ) : null}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Submit album (picker's turn)                                         */}
-      {/* ------------------------------------------------------------------ */}
       {showAlbumForm ? (
-        <section className="flex flex-col gap-3 rounded-lg border border-foreground/30 p-4">
-          <h2 className="text-sm font-semibold">
-            Submit album — Round {game?.currentRound}
+        <section className={cx(surfaceCardClass, "border-accent-orange/45 bg-accent-orange/10 ring-1 ring-accent-orange/15")}>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-orange-fg">
+            Picker action
+          </p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight">
+            Submit your album for round {game?.currentRound}
           </h2>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">Album</span>
+          <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
+            This is the record everyone will live with for the round. Keep the link
+            optional, but the album and artist are required.
+          </p>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="font-medium text-foreground">Album</span>
               <input
                 value={albumName}
-                onChange={(e) => setAlbumName(e.target.value)}
-                className="rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none focus:border-foreground/40 dark:border-white/20"
+                onChange={(event) => setAlbumName(event.target.value)}
+                className={inputClass}
               />
             </label>
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">Artist</span>
+            <label className="flex flex-col gap-2 text-sm">
+              <span className="font-medium text-foreground">Artist</span>
               <input
                 value={artistName}
-                onChange={(e) => setArtistName(e.target.value)}
-                className="rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none focus:border-foreground/40 dark:border-white/20"
+                onChange={(event) => setArtistName(event.target.value)}
+                className={inputClass}
               />
             </label>
-            <label className="col-span-full flex flex-col gap-1 text-sm">
-              <span className="font-medium">URL (optional)</span>
+            <label className="sm:col-span-2 flex flex-col gap-2 text-sm">
+              <span className="font-medium text-foreground">Album URL (optional)</span>
               <input
                 value={albumUrl}
-                onChange={(e) => setAlbumUrl(e.target.value)}
-                className="rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none focus:border-foreground/40 dark:border-white/20"
+                onChange={(event) => setAlbumUrl(event.target.value)}
+                className={inputClass}
+                placeholder="https://..."
               />
             </label>
           </div>
-          <button
-            type="button"
-            disabled={pending || !albumName.trim() || !artistName.trim()}
-            className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40"
-            onClick={() => {
-              setAlbumFb(null);
-              const normalizedAlbumUrl = normalizeOptionalHttpUrl(albumUrl);
-              if (!normalizedAlbumUrl.ok) {
-                setAlbumFb({ kind: "error", message: normalizedAlbumUrl.message });
-                return;
-              }
-              startTransition(async () => {
-                const r = await submitAlbum(
-                  gameId,
-                  albumName,
-                  artistName,
-                  normalizedAlbumUrl.value ?? ""
-                );
-                if (!r.ok) {
-                  setAlbumFb({ kind: "error", message: r.message });
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={pending || !albumName.trim() || !artistName.trim()}
+              className={primaryButtonClass}
+              onClick={() => {
+                setAlbumFb(null);
+                const normalizedAlbumUrl = normalizeOptionalHttpUrl(albumUrl);
+                if (!normalizedAlbumUrl.ok) {
+                  setAlbumFb({ kind: "error", message: normalizedAlbumUrl.message });
                   return;
                 }
-                setAlbumFb({ kind: "ok", message: "Album submitted. Others can now review." });
-                setAlbumName("");
-                setArtistName("");
-                setAlbumUrl("");
-                refresh();
-              });
-            }}
-          >
-            Submit album
-          </button>
-          <Feedback fb={albumFb} />
+                startTransition(async () => {
+                  const result = await submitAlbum(
+                    gameId,
+                    albumName,
+                    artistName,
+                    normalizedAlbumUrl.value ?? ""
+                  );
+                  if (!result.ok) {
+                    setAlbumFb({ kind: "error", message: result.message });
+                    return;
+                  }
+                  setAlbumFb({
+                    kind: "ok",
+                    message: "Album submitted. The room can review now.",
+                  });
+                  setAlbumName("");
+                  setArtistName("");
+                  setAlbumUrl("");
+                  refresh();
+                });
+              }}
+            >
+              Submit album
+            </button>
+          </div>
+          <div className="mt-3">
+            <Feedback fb={albumFb} />
+          </div>
         </section>
       ) : null}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Submit review                                                        */}
-      {/* ------------------------------------------------------------------ */}
       {showReviewForm ? (
-        <section className="flex flex-col gap-3 rounded-lg border border-foreground/30 p-4">
-          <h2 className="text-sm font-semibold">
-            Review — Round {game?.currentRound}
-          </h2>
-          {round?.albumName ? (
-            <p className="min-w-0 break-words text-sm text-foreground/80">
-              <span className="font-medium">{round.albumName}</span>
-              {" by "}
-              {round.artistName}
-              {round.albumUrl ? (
-                <>
-                  {" "}
-                  <a
-                    href={round.albumUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-2"
-                  >
-                    Open
-                  </a>
-                </>
-              ) : null}
-            </p>
-          ) : null}
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-1 text-sm">
-              <span className="font-medium">Rating (1–10)</span>
-              <input
-                type="number"
-                min={1}
-                max={10}
-                step={0.1}
-                value={rating}
-                onChange={(e) => setRating(e.target.value)}
-                className="rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none dark:border-white/20"
-              />
-            </label>
-            <label className="col-span-full flex min-w-0 flex-col gap-1 text-sm">
-              <span className="font-medium">Review (optional)</span>
-              <textarea
-                value={reviewText}
-                rows={5}
-                onChange={(e) => setReviewText(e.target.value)}
-                className="min-h-24 w-full resize-y rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none dark:border-white/20"
-              />
-            </label>
+        <section className={cx(surfaceCardClass, "border-accent-pink/35 bg-accent-pink/10")}>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-pink-fg">
+                Review panel
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+                Write your take for round {game?.currentRound}
+              </h2>
+              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
+                Score the album, leave a note if you have one, and your review stays hidden
+                until the room reaches the reveal.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-3 lg:w-[26rem] lg:grid-cols-1 xl:grid-cols-3">
+              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                  Current score
+                </p>
+                <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                  {Number.isFinite(parsedRating) ? ratingValue.toFixed(1) : "--"}
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                  Feeling
+                </p>
+                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                  {Number.isFinite(parsedRating) ? scoreLabel(ratingValue) : "Pick a score"}
+                </p>
+              </div>
+              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                  Note length
+                </p>
+                <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
+                  {reviewWords}
+                </p>
+              </div>
+            </div>
           </div>
-          <button
-            type="button"
-            disabled={pending}
-            className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40"
-            onClick={() => {
-              setReviewFb(null);
-              startTransition(async () => {
-                const r = await submitReview(roundId, Number(rating), reviewText);
-                if (!r.ok) {
-                  setReviewFb({ kind: "error", message: r.message });
-                  return;
-                }
-                setReviewText("");
-                if (r.data.revealed) {
-                  router.push("/results");
-                } else {
-                  setReviewFb({ kind: "ok", message: "Review recorded." });
-                  refresh(round?.status);
-                }
-              });
-            }}
-          >
-            Submit review
-          </button>
-          <Feedback fb={reviewFb} />
+
+          {round?.albumName ? (
+            <div className="mt-5 rounded-[24px] border border-accent-yellow/40 bg-accent-yellow/12 p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-2xl">
+                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-yellow-fg">
+                    Current album
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-foreground">{round.albumName}</p>
+                  <p className="mt-1 text-sm text-foreground-secondary">
+                    {round.artistName}
+                    {round.albumUrl ? (
+                      <>
+                        {" "}
+                        <a
+                          href={round.albumUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-foreground underline-offset-4 hover:underline"
+                        >
+                          Open link
+                        </a>
+                      </>
+                    ) : null}
+                  </p>
+                </div>
+                <div className="grid gap-2 text-sm text-foreground-secondary">
+                  <span className="rounded-full bg-surface/85 px-3 py-2">
+                    Hidden until reveal
+                  </span>
+                  <span className="rounded-full bg-surface/85 px-3 py-2">
+                    Decimals allowed
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
+            <div className="rounded-[24px] border border-surface/70 bg-surface/85 p-5">
+              <label className="flex flex-col gap-2 text-sm">
+                <span className="font-medium text-foreground">Rating (1-10)</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  step={0.1}
+                  value={rating}
+                  onChange={(event) => setRating(event.target.value)}
+                  className={cx(inputClass, "w-32")}
+                />
+              </label>
+
+              <div className="mt-4">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                  Quick picks
+                </p>
+                <div className="mt-3 grid grid-cols-5 gap-2">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
+                    <button
+                      key={value}
+                      type="button"
+                      className={cx(
+                        "rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors",
+                        Number.isFinite(parsedRating) && Math.abs(ratingValue - value) < 0.05
+                          ? "border-accent-orange bg-accent-orange text-white"
+                          : "border-border bg-surface hover:bg-surface-raised"
+                      )}
+                      onClick={() => setRating(String(value))}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <label className="mt-5 flex flex-col gap-2 text-sm">
+                <span className="font-medium text-foreground">Review (optional)</span>
+                <textarea
+                  value={reviewText}
+                  rows={6}
+                  onChange={(event) => setReviewText(event.target.value)}
+                  className={textareaClass}
+                  placeholder="What landed? What missed? What would you bring up if the group argued about this one?"
+                />
+              </label>
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={pending}
+                  className={primaryButtonClass}
+                  onClick={() => {
+                    setReviewFb(null);
+                    startTransition(async () => {
+                      const result = await submitReview(roundId, Number(rating), reviewText);
+                      if (!result.ok) {
+                        setReviewFb({ kind: "error", message: result.message });
+                        return;
+                      }
+                      setReviewText("");
+                      if (result.data.revealed) {
+                        router.push("/results");
+                      } else {
+                        setReviewFb({ kind: "ok", message: "Review recorded." });
+                        refresh(round?.status);
+                      }
+                    });
+                  }}
+                >
+                  Submit review
+                </button>
+              </div>
+              <div className="mt-3">
+                <Feedback fb={reviewFb} />
+              </div>
+            </div>
+
+            <div className="grid gap-4">
+              <div className="rounded-[24px] border border-accent-lime/35 bg-accent-lime/10 p-5">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-lime-fg">
+                  Live read
+                </p>
+                <div className="mt-3 flex items-center gap-3">
+                  <span
+                    className={cx(
+                      "rounded-full px-3 py-1 text-sm font-medium",
+                      Number.isFinite(parsedRating)
+                        ? scoreToneClass(ratingValue)
+                        : "bg-surface text-foreground-secondary"
+                    )}
+                  >
+                    {Number.isFinite(parsedRating) ? `${ratingValue.toFixed(1)} / 10` : "No score yet"}
+                  </span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {Number.isFinite(parsedRating) ? scoreLabel(ratingValue) : "Waiting on your score"}
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-7 text-foreground-secondary">
+                  Your note is private until reveal. Once submitted, you cannot keep editing here while the room waits.
+                </p>
+              </div>
+
+              <div className="rounded-[24px] border border-accent-peach/40 bg-accent-peach/10 p-5">
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-peach-fg">
+                  Good review prompts
+                </p>
+                <ul className="mt-3 space-y-2 text-sm leading-7 text-foreground-secondary">
+                  <li>What is this album trying to do?</li>
+                  <li>Which track or moment changed your score the most?</li>
+                  <li>Would you revisit it outside the game?</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </section>
       ) : null}
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Group & game setup (only when needed)                               */}
-      {/* ------------------------------------------------------------------ */}
       {noGroup || needsGameCreation ? (
-        <div className="flex flex-col gap-4 rounded-lg border border-black/10 p-4 dark:border-white/15">
-          <h2 className="text-sm font-semibold text-foreground/60">Setup</h2>
+        <section className={surfaceCardClass}>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+            Setup
+          </p>
+          <h2 className="mt-2 text-xl font-semibold tracking-tight">
+            Build the room before the round starts
+          </h2>
 
           {noGroup ? (
-            <>
-              {/* Create group */}
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-medium">Create a group</p>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                  <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
-                    <span className="sr-only">Group name</span>
-                    <input
-                      value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
-                      placeholder="Group name"
-                      className="rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none focus:border-foreground/40 dark:border-white/20"
-                    />
-                  </label>
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <div className={cx(subtleCardClass, "border-accent-pink/35 bg-accent-pink/10")}>
+                <p className="text-sm font-semibold text-foreground">Create a group</p>
+                <p className="mt-2 text-sm leading-7 text-foreground-secondary">
+                  Start a new private album club and get an invite code for everyone else.
+                </p>
+                <div className="mt-4 flex flex-col gap-3">
+                  <input
+                    value={groupName}
+                    onChange={(event) => setGroupName(event.target.value)}
+                    placeholder="Group name"
+                    className={inputClass}
+                  />
                   <button
                     type="button"
                     disabled={pending || !groupName.trim()}
-                    className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40"
+                    className={primaryButtonClass}
                     onClick={() => {
                       setGroupFb(null);
                       startTransition(async () => {
-                        const r = await createGroup(groupName);
-                        if (!r.ok) {
-                          setGroupFb({ kind: "error", message: r.message });
+                        const result = await createGroup(groupName);
+                        if (!result.ok) {
+                          setGroupFb({ kind: "error", message: result.message });
                           return;
                         }
                         setGroupFb({
                           kind: "ok",
-                          message: `Group created. Invite code: ${r.data.inviteCode}`,
+                          message: `Group created. Invite code: ${result.data.inviteCode}`,
                         });
                         setGroupName("");
                         refresh();
                       });
                     }}
                   >
-                    Create
+                    Create group
                   </button>
                 </div>
-                <Feedback fb={groupFb} />
+                <div className="mt-3">
+                  <Feedback fb={groupFb} />
+                </div>
               </div>
 
-              <div className="border-t border-black/10 dark:border-white/10" />
-
-              {/* Join group */}
-              <div className="flex flex-col gap-2">
-                <p className="text-xs font-medium">Join with invite code</p>
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                  <label className="flex min-w-0 flex-1 flex-col gap-1 text-sm">
-                    <span className="sr-only">Invite code</span>
-                    <input
-                      value={joinInvite}
-                      onChange={(e) => setJoinInvite(e.target.value.toUpperCase())}
-                      placeholder="ABC123"
-                      maxLength={6}
-                      className="rounded-md border border-black/15 bg-background px-3 py-2 font-mono text-foreground outline-none focus:border-foreground/40 dark:border-white/20"
-                    />
-                  </label>
+              <div className={cx(subtleCardClass, "border-accent-lime/35 bg-accent-lime/10")}>
+                <p className="text-sm font-semibold text-foreground">Join with an invite code</p>
+                <p className="mt-2 text-sm leading-7 text-foreground-secondary">
+                  Already invited? Enter the six-character code to join the room.
+                </p>
+                <div className="mt-4 flex flex-col gap-3">
+                  <input
+                    value={joinInvite}
+                    onChange={(event) => setJoinInvite(event.target.value.toUpperCase())}
+                    placeholder="ABC123"
+                    maxLength={6}
+                    className={cx(inputClass, "font-mono")}
+                  />
                   <button
                     type="button"
                     disabled={pending || joinInvite.length !== 6}
-                    className="rounded-md border border-black/15 px-4 py-2 text-sm font-medium dark:border-white/20 disabled:opacity-40"
+                    className={secondaryButtonClass}
                     onClick={() => {
                       setJoinFb(null);
                       startTransition(async () => {
-                        const r = await joinGroup(joinInvite);
-                        if (!r.ok) {
-                          setJoinFb({ kind: "error", message: r.message });
+                        const result = await joinGroup(joinInvite);
+                        if (!result.ok) {
+                          setJoinFb({ kind: "error", message: result.message });
                           return;
                         }
                         setJoinFb({ kind: "ok", message: "Joined group." });
@@ -801,97 +1169,112 @@ export function PlayShell({ initialState }: Props) {
                       });
                     }}
                   >
-                    Join
+                    Join group
                   </button>
                 </div>
-                <Feedback fb={joinFb} />
+                <div className="mt-3">
+                  <Feedback fb={joinFb} />
+                </div>
               </div>
-            </>
+            </div>
           ) : null}
 
           {needsGameCreation && group ? (
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-medium">
+            <div className="mt-5 rounded-[26px] border border-accent-peach/40 bg-accent-peach/10 p-5">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-peach-fg">
+                Game setup
+              </p>
+              <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+                {game?.status === "completed" ? "Start another run" : `Start a game for ${group.name}`}
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-foreground-secondary">
+                Invite code{" "}
+                <span className="font-mono font-semibold text-foreground">{group.inviteCode}</span>.
                 {game?.status === "completed"
-                  ? "Start a new game for "
-                  : "Start a game for "}
-                <span className="font-semibold">{group.name}</span>
+                  ? " This starts a fresh scoreboard for the same group."
+                  : " The creator becomes the host for this game."}
               </p>
-              <p className="text-xs text-foreground/50">
-                Invite code:{" "}
-                <span className="font-mono font-semibold text-foreground">
-                  {group.inviteCode}
-                </span>
-              </p>
-              {game?.status === "completed" ? (
-                <p className="text-xs text-foreground/50">
-                  You will be the host when you create the next game.
-                </p>
-              ) : null}
-              <button
-                type="button"
-                disabled={pending}
-                className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40"
-                onClick={() => {
-                  setGameFb(null);
-                  startTransition(async () => {
-                    const r = await createGame(groupId);
-                    if (!r.ok) {
-                      setGameFb({ kind: "error", message: r.message });
-                      return;
-                    }
-                    setGameFb({ kind: "ok", message: "Game created." });
-                    refresh();
-                  });
-                }}
-              >
-                Create game
-              </button>
-              <Feedback fb={gameFb} />
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {/* Invite code reminder when in group with a non-completed game */}
-      {group && game && game.status !== "completed" ? (
-        <p className="text-xs text-foreground/40">
-          Group invite:{" "}
-          <span className="font-mono text-foreground/60">{group.inviteCode}</span>
-        </p>
-      ) : null}
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Leave group                                                          */}
-      {/* ------------------------------------------------------------------ */}
-      {group ? (
-        <div className="border-t border-black/10 pt-4 dark:border-white/10">
-          {!leaveConfirm ? (
-            <button
-              type="button"
-              onClick={() => setLeaveConfirm(true)}
-              className="text-xs text-foreground/40 underline-offset-2 hover:text-red-500 hover:underline"
-            >
-              Leave group &ldquo;{group.name}&rdquo;
-            </button>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <p className="text-xs text-foreground/70">
-                Are you sure? If you are the sole member this will delete the
-                group and all its game data. If others are in the group and you
-                are the host of an active game, you must end the game first.
-              </p>
-              <div className="flex gap-3">
+              <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   type="button"
                   disabled={pending}
-                  className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40"
+                  className={primaryButtonClass}
+                  onClick={() => {
+                    setGameFb(null);
+                    startTransition(async () => {
+                      const result = await createGame(groupId);
+                      if (!result.ok) {
+                        setGameFb({ kind: "error", message: result.message });
+                        return;
+                      }
+                      setGameFb({ kind: "ok", message: "Game created." });
+                      refresh();
+                    });
+                  }}
+                >
+                  Create game
+                </button>
+              </div>
+              <div className="mt-3">
+                <Feedback fb={gameFb} />
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {group && game && game.status !== "completed" ? (
+        <section className={cx(surfaceCardClass, "border-accent-lime/35 bg-accent-lime/10")}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-lime-fg">
+                Club access
+              </p>
+              <h2 className="mt-2 text-lg font-semibold tracking-tight">Invite code</h2>
+            </div>
+            <span className="font-mono text-lg font-semibold tracking-[0.2em] text-foreground">
+              {group.inviteCode}
+            </span>
+          </div>
+        </section>
+      ) : null}
+
+      {group ? (
+        <section className={surfaceCardClass}>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+            Membership
+          </p>
+          <h2 className="mt-2 text-lg font-semibold tracking-tight">
+            Leave {group.name}
+          </h2>
+
+          {!leaveConfirm ? (
+            <div className="mt-4 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setLeaveConfirm(true)}
+                className={secondaryButtonClass}
+              >
+                Leave group
+              </button>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-[24px] border border-red-200 bg-red-50 p-4 dark:border-red-950/50 dark:bg-red-950/20">
+              <p className="text-sm leading-7 text-foreground-secondary">
+                If you are the only member, the group and its game data will be removed.
+                If other members remain and you host an active game, end that game first.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={pending}
+                  className={destructiveButtonClass}
                   onClick={() => {
                     setLeaveFb(null);
                     startTransition(async () => {
-                      const r = await leaveGroup(group.id);
-                      if (!r.ok) {
-                        setLeaveFb({ kind: "error", message: r.message });
+                      const result = await leaveGroup(group.id);
+                      if (!result.ok) {
+                        setLeaveFb({ kind: "error", message: result.message });
                         setLeaveConfirm(false);
                         return;
                       }
@@ -900,20 +1283,25 @@ export function PlayShell({ initialState }: Props) {
                     });
                   }}
                 >
-                  Yes, leave
+                  Yes, leave group
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setLeaveConfirm(false); setLeaveFb(null); }}
-                  className="rounded-md border border-black/15 px-3 py-1.5 text-xs font-medium dark:border-white/20"
+                  onClick={() => {
+                    setLeaveConfirm(false);
+                    setLeaveFb(null);
+                  }}
+                  className={secondaryButtonClass}
                 >
                   Cancel
                 </button>
               </div>
-              <Feedback fb={leaveFb} />
+              <div className="mt-3">
+                <Feedback fb={leaveFb} />
+              </div>
             </div>
           )}
-        </div>
+        </section>
       ) : null}
     </div>
   );

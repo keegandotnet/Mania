@@ -15,8 +15,8 @@ export function SignupForm() {
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function onSubmit(event: React.FormEvent) {
+    event.preventDefault();
     setError(null);
     setInfo(null);
     setLoading(true);
@@ -40,42 +40,44 @@ export function SignupForm() {
       setInfo("Check your email to confirm your account, or sign in if confirmation is disabled.");
       setLoading(false);
       router.refresh();
-    } catch (error) {
-      console.error("Signup failed", error);
-      setError(mapClientErrorMessage(error, "Something went wrong."));
+    } catch (err) {
+      console.error("Signup failed", err);
+      setError(mapClientErrorMessage(err, "Something went wrong."));
       setLoading(false);
     }
   }
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Display name (optional)</span>
+      <label className="flex flex-col gap-2 text-sm">
+        <span className="font-medium text-foreground">Display name (optional)</span>
         <input
           name="displayName"
           type="text"
           autoComplete="nickname"
           maxLength={80}
           value={displayName}
-          onChange={(ev) => setDisplayName(ev.target.value)}
+          onChange={(event) => setDisplayName(event.target.value)}
           placeholder="How others see you in-game"
-          className="rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none ring-0 focus:border-foreground/40 dark:border-white/20"
+          className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none placeholder:text-foreground-secondary focus:border-border-strong disabled:opacity-50"
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Email</span>
+
+      <label className="flex flex-col gap-2 text-sm">
+        <span className="font-medium text-foreground">Email</span>
         <input
           name="email"
           type="email"
           autoComplete="email"
           required
           value={email}
-          onChange={(ev) => setEmail(ev.target.value)}
-          className="rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none ring-0 focus:border-foreground/40 dark:border-white/20"
+          onChange={(event) => setEmail(event.target.value)}
+          className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none placeholder:text-foreground-secondary focus:border-border-strong disabled:opacity-50"
         />
       </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Password</span>
+
+      <label className="flex flex-col gap-2 text-sm">
+        <span className="font-medium text-foreground">Password</span>
         <input
           name="password"
           type="password"
@@ -83,26 +85,39 @@ export function SignupForm() {
           required
           minLength={6}
           value={password}
-          onChange={(ev) => setPassword(ev.target.value)}
-          className="rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none ring-0 focus:border-foreground/40 dark:border-white/20"
+          onChange={(event) => setPassword(event.target.value)}
+          className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none placeholder:text-foreground-secondary focus:border-border-strong disabled:opacity-50"
         />
       </label>
-      {error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {error}
+
+      <div className="rounded-[24px] border border-accent-lime/35 bg-accent-lime/12 p-4">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-lime-fg">
+          What happens next
         </p>
-      ) : null}
-      {info ? (
-        <p className="text-sm text-foreground/80" role="status">
-          {info}
+        <p className="mt-2 text-sm leading-7 text-foreground-secondary">
+          Your account is created first, then email confirmation can hand you off to the account page.
         </p>
-      ) : null}
+      </div>
+
+      <div className="min-h-6">
+        {error ? (
+          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {info ? (
+          <p className="text-sm text-foreground-secondary" role="status">
+            {info}
+          </p>
+        ) : null}
+      </div>
+
       <button
         type="submit"
         disabled={loading}
-        className="mt-2 rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
+        className="mt-2 rounded-md bg-accent-orange px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-orange-hover disabled:opacity-40"
       >
-        {loading ? "Creating account…" : "Sign up"}
+        {loading ? "Creating account..." : "Sign up"}
       </button>
     </form>
   );

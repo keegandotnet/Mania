@@ -1,12 +1,8 @@
 @import "tailwindcss";
 
-/* ── Design tokens ─────────────────────────────────────────────────────────
-   See docs/design.md for the full spec and usage rules.
-   All components reference these variables; raw hex values live here only.
-   ────────────────────────────────────────────────────────────────────────── */
+/* Design tokens. Raw hex values live here only. */
 
 :root {
-  /* Base */
   --background: #fafaf9;
   --surface: #ffffff;
   --surface-raised: #f3f4f6;
@@ -15,19 +11,26 @@
   --border: #e5e7eb;
   --border-strong: #d1d5db;
 
-  /* Accents — orange: CTA / your-turn; yellow: ratings; green: submitted */
+  /* Orange stays reserved for action states and primary CTAs. */
   --accent-orange: #f97316;
   --accent-orange-hover: #ea6c0a;
-  --accent-orange-fg: #c2410c;   /* AA-compliant orange text on light bg */
+  --accent-orange-fg: #c2410c;
   --accent-yellow: #facc15;
-  --accent-yellow-fg: #92400e;   /* dark amber — readable on yellow fills */
+  --accent-yellow-fg: #92400e;
   --accent-green: #22c55e;
-  --accent-green-fg: #14532d;    /* dark green — readable on green fills */
+  --accent-green-fg: #14532d;
+
+  /* Landing and brand accents. */
+  --accent-pink: #f9a8d4;
+  --accent-pink-fg: #831843;
+  --accent-peach: #fdba74;
+  --accent-peach-fg: #9a3412;
+  --accent-lime: #bef264;
+  --accent-lime-fg: #3f6212;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Warm dark — matches the warmth of the light-mode #fafaf9 */
     --background: #141412;
     --surface: #1c1c1a;
     --surface-raised: #242422;
@@ -36,7 +39,6 @@
     --border: #2d2d2b;
     --border-strong: #3f3f3c;
 
-    /* Lighter accents for dark backgrounds */
     --accent-orange: #fb923c;
     --accent-orange-hover: #f97316;
     --accent-orange-fg: #fed7aa;
@@ -44,16 +46,17 @@
     --accent-yellow-fg: #fef3c7;
     --accent-green: #4ade80;
     --accent-green-fg: #dcfce7;
+
+    --accent-pink: #f472b6;
+    --accent-pink-fg: #fce7f3;
+    --accent-peach: #fdba74;
+    --accent-peach-fg: #fff7ed;
+    --accent-lime: #a3e635;
+    --accent-lime-fg: #ecfccb;
   }
 }
 
-/* ── Tailwind v4 theme extension ───────────────────────────────────────────
-   Maps CSS variables → Tailwind utility classes:
-     bg-surface, text-foreground-secondary, border-border, etc.
-   ────────────────────────────────────────────────────────────────────────── */
-
 @theme inline {
-  /* Base palette */
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
@@ -62,7 +65,6 @@
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
 
-  /* Accents */
   --color-accent-orange: var(--accent-orange);
   --color-accent-orange-hover: var(--accent-orange-hover);
   --color-accent-orange-fg: var(--accent-orange-fg);
@@ -70,17 +72,25 @@
   --color-accent-yellow-fg: var(--accent-yellow-fg);
   --color-accent-green: var(--accent-green);
   --color-accent-green-fg: var(--accent-green-fg);
+  --color-accent-pink: var(--accent-pink);
+  --color-accent-pink-fg: var(--accent-pink-fg);
+  --color-accent-peach: var(--accent-peach);
+  --color-accent-peach-fg: var(--accent-peach-fg);
+  --color-accent-lime: var(--accent-lime);
+  --color-accent-lime-fg: var(--accent-lime-fg);
 
-  /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
-
-/* ── Base styles ───────────────────────────────────────────────────────────*/
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent-pink);
+  color: var(--foreground);
 }

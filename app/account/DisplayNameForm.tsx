@@ -15,53 +15,64 @@ export function DisplayNameForm({ initialDisplayName }: Props) {
 
   return (
     <form
-      className="flex flex-col gap-3 rounded-lg border border-black/10 p-4 dark:border-white/15"
-      onSubmit={(e) => {
-        e.preventDefault();
+      className="rounded-[30px] border border-accent-lime/35 bg-accent-lime/12 p-6 shadow-sm"
+      onSubmit={(event) => {
+        event.preventDefault();
         setError(null);
         setOk(null);
         startTransition(async () => {
-          const r = await updateProfileDisplayName(value);
-          if (!r.ok) {
-            setError(r.message);
+          const result = await updateProfileDisplayName(value);
+          if (!result.ok) {
+            setError(result.message);
             return;
           }
-          setOk(r.data.displayName == null ? "Display name cleared." : "Saved.");
+          setOk(result.data.displayName == null ? "Display name cleared." : "Display name saved.");
           router.refresh();
         });
       }}
     >
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="font-medium">Display name</span>
-        <span className="text-xs text-foreground/55">
-          Shown on Play and Results instead of email when set. Leave blank to fall back to email.
-        </span>
+      <div className="max-w-2xl">
+        <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-lime-fg">
+          Display identity
+        </p>
+        <h2 className="mt-2 text-2xl font-semibold tracking-tight">How the room sees you</h2>
+        <p className="mt-3 text-sm leading-7 text-foreground-secondary">
+          This name shows up on Play and Results. Leave it blank if you want to fall back to your email.
+        </p>
+      </div>
+
+      <label className="mt-5 flex flex-col gap-2 text-sm">
+        <span className="font-medium text-foreground">Display name</span>
         <input
           name="displayName"
           type="text"
           maxLength={80}
           value={value}
-          onChange={(ev) => setValue(ev.target.value)}
+          onChange={(event) => setValue(event.target.value)}
           placeholder="e.g. DJ Nova"
-          className="mt-1 rounded-md border border-black/15 bg-background px-3 py-2 text-foreground outline-none ring-0 focus:border-foreground/40 dark:border-white/20"
+          className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none placeholder:text-foreground-secondary focus:border-border-strong disabled:opacity-50"
         />
       </label>
-      {error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {ok ? (
-        <p className="text-sm text-foreground/70" role="status">
-          {ok}
-        </p>
-      ) : null}
+
+      <div className="mt-4 min-h-6">
+        {error ? (
+          <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+            {error}
+          </p>
+        ) : null}
+        {ok ? (
+          <p className="text-sm text-foreground-secondary" role="status">
+            {ok}
+          </p>
+        ) : null}
+      </div>
+
       <button
         type="submit"
         disabled={pending}
-        className="w-fit rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
+        className="mt-2 w-fit rounded-md bg-accent-orange px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-orange-hover disabled:opacity-40"
       >
-        {pending ? "Saving…" : "Save display name"}
+        {pending ? "Saving..." : "Save display name"}
       </button>
     </form>
   );

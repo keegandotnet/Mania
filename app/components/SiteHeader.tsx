@@ -14,23 +14,23 @@ export async function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+    <header className="sticky top-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-xl">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         <Link
           href="/"
           className="flex min-w-0 items-center gap-3 text-foreground transition-opacity hover:opacity-85"
         >
-          <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-accent-orange/30 bg-accent-orange text-sm font-semibold text-white shadow-sm">
+          <span className="flex h-11 w-11 items-center justify-center rounded-[1.35rem] border border-border bg-[linear-gradient(135deg,var(--accent-pink),var(--accent-yellow),var(--accent-lime))] text-sm font-semibold text-foreground shadow-sm">
             M
           </span>
           <span className="min-w-0">
             <span className="block text-lg font-semibold tracking-tight">Mania</span>
-            <span className="block text-xs text-foreground-secondary">
-              Album night, scored properly
+            <span className="block text-[11px] uppercase tracking-[0.22em] text-foreground-secondary">
+              Book club for albums
             </span>
           </span>
         </Link>
-        <nav className="flex items-center gap-2 text-sm font-medium sm:gap-3">
+        <nav className="flex items-center gap-1 rounded-full border border-border bg-surface/90 p-1 text-sm font-medium shadow-sm sm:gap-2">
           {user ? (
             <>
               <Link

@@ -30,17 +30,39 @@ export default async function ResultsPage() {
       };
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-8 px-6 py-16">
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Results</h1>
-        <Link
-          href="/play"
-          className="text-sm font-medium text-foreground/70 underline-offset-2 hover:text-foreground hover:underline"
-        >
-          Back to Play
-        </Link>
+    <main className="relative flex-1 overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-accent-yellow/25 blur-3xl" />
+        <div className="absolute right-[-4rem] top-24 h-72 w-72 rounded-full bg-accent-pink/28 blur-3xl" />
+        <div className="absolute bottom-[-4rem] left-1/3 h-80 w-80 rounded-full bg-accent-lime/24 blur-3xl" />
+        <div className="absolute inset-x-0 top-0 h-[24rem] bg-gradient-to-b from-surface/75 via-background/45 to-transparent" />
       </div>
-      <ResultsView data={data} />
+
+      <section className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 sm:px-6 sm:py-16">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-accent-yellow/45 bg-accent-yellow/16 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-accent-yellow-fg">
+              Scoreboard
+            </div>
+            <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl">
+              Round reveals and the running table.
+            </h1>
+            <p className="mt-4 max-w-prose text-sm leading-7 text-foreground-secondary sm:text-base">
+              Results is the memory of the club: every revealed pick, every written
+              take, and the shape of the room once the scores settle.
+            </p>
+          </div>
+
+          <Link
+            href="/play"
+            className="rounded-md border border-border bg-surface px-5 py-3 text-sm font-medium text-foreground shadow-sm transition-colors hover:bg-surface-raised"
+          >
+            Back to Play
+          </Link>
+        </div>
+
+        <ResultsView data={data} />
+      </section>
     </main>
   );
 }

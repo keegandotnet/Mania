@@ -17,8 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Mania",
-  description: "Private album-rating nights with rounds, reveals, reviews, and scoreboards.",
+  title: "Mania | Book Club for Albums",
+  description:
+    "Private album clubs with turns, reviews, reveals, and a running table for the group.",
 };
 
 export default async function RootLayout({
