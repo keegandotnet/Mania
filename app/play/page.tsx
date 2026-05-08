@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { PageShell } from "@/app/components/ui";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getMyGameState, type MyGameState } from "@/app/actions/mania";
 import { PlayShell } from "./PlayShell";
@@ -31,31 +32,24 @@ export default async function PlayPage() {
       };
 
   return (
-    <main className="relative flex-1 overflow-hidden">
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-accent-pink/30 blur-3xl" />
-        <div className="absolute right-[-4rem] top-20 h-72 w-72 rounded-full bg-accent-yellow/24 blur-3xl" />
-        <div className="absolute bottom-[-4rem] left-1/3 h-80 w-80 rounded-full bg-accent-lime/24 blur-3xl" />
-        <div className="absolute inset-x-0 top-0 h-[24rem] bg-gradient-to-b from-surface/70 via-background/40 to-transparent" />
-      </div>
-
+    <PageShell>
       <section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:px-6 sm:py-16">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-accent-peach/40 bg-accent-peach/14 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-accent-peach-fg">
+        <header className="max-w-3xl">
+          <span className="inline-flex rounded-full border-2 border-foreground/15 bg-surface/90 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-accent-peach-fg landing-sticker-sm">
             Live club room
-          </div>
-          <h1 className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl">
+          </span>
+          <h1 className="mt-6 text-balance text-4xl font-black tracking-tight sm:text-6xl">
             Play the round.
           </h1>
-          <p className="mt-4 max-w-prose text-sm leading-7 text-foreground-secondary sm:text-base">
+          <p className="mt-4 max-w-prose text-base leading-7 text-foreground-secondary sm:text-lg sm:leading-8">
             This is the working room for your group: check whose turn it is,
-            submit picks, leave reviews, and keep the round moving without losing
-            the club feeling.
+            submit picks, leave reviews, and keep the round moving without
+            losing the club feeling.
           </p>
-        </div>
+        </header>
 
         <PlayShell initialState={initialState} />
       </section>
-    </main>
+    </PageShell>
   );
 }

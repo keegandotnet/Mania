@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { primaryButtonClass } from "@/app/components/ui";
 
 type CopyState = "idle" | "copied" | "error";
 
@@ -30,25 +31,28 @@ export function CopyResultsSummaryButton({ summary }: Props) {
   };
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-5 shadow-sm">
+    <div className="rounded-[2rem] border-2 border-foreground bg-accent-lime/25 p-6 landing-sticker sm:p-7">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="max-w-prose">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-lime-fg">
             Share summary
           </p>
-          <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
             Copy a paste-ready recap.
           </h2>
-          <p className="mt-2 text-sm leading-7 text-foreground-secondary">
-            Includes each revealed album, picker, average score, reviewer scores, and
-            written reviews.
+          <p className="mt-2 text-sm leading-7 text-foreground/85">
+            Includes each revealed album, picker, average score, reviewer
+            scores, and written reviews.
           </p>
           {copyState === "copied" ? (
-            <p className="mt-3 text-sm font-medium text-accent-green-fg">Copied to clipboard.</p>
+            <p className="mt-3 text-sm font-bold text-accent-green-fg">
+              Copied to clipboard.
+            </p>
           ) : null}
           {copyState === "error" ? (
-            <p className="mt-3 text-sm font-medium text-accent-pink-fg">
-              Clipboard access failed. Try copying again from a secure browser context.
+            <p className="mt-3 text-sm font-bold text-accent-pink-fg">
+              Clipboard access failed. Try copying again from a secure browser
+              context.
             </p>
           ) : null}
         </div>
@@ -56,7 +60,7 @@ export function CopyResultsSummaryButton({ summary }: Props) {
         <button
           type="button"
           onClick={copySummary}
-          className="rounded-md bg-accent-orange px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-orange-hover"
+          className={primaryButtonClass}
         >
           {copyState === "copied" ? "Copied!" : "Copy summary"}
         </button>

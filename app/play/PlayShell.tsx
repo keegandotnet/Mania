@@ -4,6 +4,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import {
+  StatTile,
+  cx,
+  destructiveButtonClass,
+  inputClass,
+  primaryButtonClass,
+  secondaryButtonClass,
+  textareaClass,
+  toneBadgeClass,
+  toneCardClass,
+  toneEyebrowClass,
+  type Tone,
+} from "@/app/components/ui";
+import {
   type GroupRosterRow,
   type MyGameState,
   createGame,
@@ -22,26 +35,11 @@ import { normalizeOptionalHttpUrl } from "@/lib/mania/url";
 
 type Props = { initialState: MyGameState };
 type FeedbackState = { kind: "error" | "ok"; message: string } | null;
-type Tone = "neutral" | "orange" | "yellow" | "green" | "pink" | "lime" | "peach";
 
-const surfaceCardClass =
-  "rounded-[30px] border border-border bg-surface p-5 shadow-sm";
-const subtleCardClass =
-  "rounded-[26px] border border-border bg-surface-raised/65 p-4 shadow-sm";
-const inputClass =
-  "rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground outline-none placeholder:text-foreground-secondary focus:border-border-strong disabled:opacity-50";
-const textareaClass =
-  "min-h-24 rounded-md border border-border bg-surface px-3 py-2 text-sm leading-relaxed text-foreground outline-none placeholder:text-foreground-secondary focus:border-border-strong disabled:opacity-50";
-const primaryButtonClass =
-  "rounded-md bg-accent-orange px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-orange-hover disabled:opacity-40";
-const secondaryButtonClass =
-  "rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised disabled:opacity-40";
-const destructiveButtonClass =
-  "rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-40";
-
-function cx(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ");
-}
+const stickerCardClass =
+  "rounded-[2rem] border-2 border-foreground bg-surface p-6 landing-sticker sm:p-7";
+const innerMutedClass =
+  "rounded-2xl border-2 border-foreground/10 bg-surface-raised/70 p-4";
 
 function statusFor(state: MyGameState): {
   eyebrow: string;
@@ -57,7 +55,8 @@ function statusFor(state: MyGameState): {
     return {
       eyebrow: "Welcome",
       title: "No group yet",
-      detail: "Create a group or join one with an invite code to get your club started.",
+      detail:
+        "Create a group or join one with an invite code to get your club started.",
       tone: "pink",
       tag: "Setup",
       urgent: false,
@@ -118,7 +117,8 @@ function statusFor(state: MyGameState): {
       return {
         eyebrow: cap,
         title: "Your pick is due",
-        detail: "Choose the album, add the artist, and set the round in motion.",
+        detail:
+          "Choose the album, add the artist, and set the round in motion.",
         tone: "orange",
         tag: "Your turn",
         urgent: true,
@@ -189,10 +189,13 @@ function averageRating(reviews: { rating: number }[]): number | null {
 }
 
 function scoreToneClass(rating: number) {
-  if (rating >= 8.5) return "bg-accent-lime/60 text-accent-lime-fg";
-  if (rating >= 7) return "bg-accent-yellow/70 text-accent-yellow-fg";
-  if (rating >= 5) return "bg-accent-peach/60 text-accent-peach-fg";
-  return "bg-accent-pink/55 text-accent-pink-fg";
+  if (rating >= 8.5)
+    return "border-2 border-foreground/85 bg-accent-lime/65 text-accent-lime-fg";
+  if (rating >= 7)
+    return "border-2 border-foreground/85 bg-accent-yellow/75 text-accent-yellow-fg";
+  if (rating >= 5)
+    return "border-2 border-foreground/85 bg-accent-peach/65 text-accent-peach-fg";
+  return "border-2 border-foreground/85 bg-accent-pink/55 text-accent-pink-fg";
 }
 
 function scoreLabel(rating: number) {
@@ -210,46 +213,12 @@ function wordCount(value: string) {
   return trimmed.split(/\s+/).length;
 }
 
-function groupMemberLabel(viewerId: string, userId: string, roster: GroupRosterRow[]) {
+function groupMemberLabel(
+  viewerId: string,
+  userId: string,
+  roster: GroupRosterRow[]
+) {
   return memberLabel(viewerId, userId, roster);
-}
-
-function toneCardClass(tone: Tone) {
-  switch (tone) {
-    case "orange":
-      return "border-accent-orange/45 bg-accent-orange/10 ring-1 ring-accent-orange/15";
-    case "yellow":
-      return "border-accent-yellow/45 bg-accent-yellow/18";
-    case "green":
-      return "border-accent-green/35 bg-accent-green/10";
-    case "pink":
-      return "border-accent-pink/35 bg-accent-pink/12";
-    case "lime":
-      return "border-accent-lime/35 bg-accent-lime/12";
-    case "peach":
-      return "border-accent-peach/40 bg-accent-peach/12";
-    default:
-      return "border-border bg-surface";
-  }
-}
-
-function toneBadgeClass(tone: Tone) {
-  switch (tone) {
-    case "orange":
-      return "bg-accent-orange text-white";
-    case "yellow":
-      return "bg-accent-yellow/75 text-accent-yellow-fg";
-    case "green":
-      return "bg-accent-green/15 text-accent-green-fg";
-    case "pink":
-      return "bg-accent-pink/55 text-accent-pink-fg";
-    case "lime":
-      return "bg-accent-lime/60 text-accent-lime-fg";
-    case "peach":
-      return "bg-accent-peach/60 text-accent-peach-fg";
-    default:
-      return "bg-surface-raised text-foreground-secondary";
-  }
 }
 
 function Feedback({ fb }: { fb: FeedbackState }) {
@@ -259,8 +228,10 @@ function Feedback({ fb }: { fb: FeedbackState }) {
         <p
           role={fb.kind === "error" ? "alert" : "status"}
           className={cx(
-            "text-sm",
-            fb.kind === "error" ? "text-red-600 dark:text-red-400" : "text-foreground-secondary"
+            "text-sm font-medium",
+            fb.kind === "error"
+              ? "text-red-600 dark:text-red-400"
+              : "text-foreground-secondary"
           )}
         >
           {fb.message}
@@ -356,51 +327,26 @@ export function PlayShell({ initialState }: Props) {
   const ratingValue = Number.isFinite(parsedRating) ? parsedRating : 0;
   const reviewWords = wordCount(reviewText);
 
-  const quickFacts = [
-    {
-      label: "Identity",
-      value: state.viewerDisplayName?.trim() || state.email,
-      tone: "pink" as const,
-    },
-    {
-      label: "Group",
-      value: group?.name ?? "Not joined yet",
-      tone: "lime" as const,
-    },
-    {
-      label: "Invite",
-      value: group?.inviteCode ?? "------",
-      tone: "yellow" as const,
-    },
-    {
-      label: "Round",
-      value: game ? `${game.currentRound}/${game.maxRounds}` : "Not started",
-      tone: "peach" as const,
-    },
-  ];
-
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <section className={cx("rounded-[34px] p-6 shadow-sm", toneCardClass(status.tone))}>
+      <section className={cx(toneCardClass(status.tone), "p-6 sm:p-8")}>
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-foreground-secondary">
-                {status.eyebrow}
-              </p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+              <p className={toneEyebrowClass(status.tone)}>{status.eyebrow}</p>
+              <h2 className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-4xl">
                 {status.title}
               </h2>
-              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
+              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground/85">
                 {status.detail}
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <span
                 className={cx(
-                  "rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.16em]",
-                  toneBadgeClass(status.tone)
+                  toneBadgeClass(status.tone),
+                  "uppercase tracking-[0.2em]"
                 )}
               >
                 {status.tag}
@@ -417,27 +363,33 @@ export function PlayShell({ initialState }: Props) {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {quickFacts.map((fact) => (
-              <div
-                key={fact.label}
-                className={cx("rounded-[24px] border p-4", toneCardClass(fact.tone))}
-              >
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  {fact.label}
-                </p>
-                <p className="mt-2 break-words text-sm font-semibold text-foreground">
-                  {fact.value}
-                </p>
-                {fact.label === "Identity" && state.viewerDisplayName?.trim() ? (
-                  <p className="mt-1 break-all font-mono text-xs text-foreground-secondary">
-                    {state.email}
-                  </p>
-                ) : null}
-              </div>
-            ))}
+            <StatTile
+              label="Identity"
+              value={state.viewerDisplayName?.trim() || state.email}
+              hint={
+                state.viewerDisplayName?.trim() ? (
+                  <span className="break-all font-mono">{state.email}</span>
+                ) : null
+              }
+            />
+            <StatTile label="Group" value={group?.name ?? "Not joined yet"} />
+            <StatTile
+              label="Invite"
+              value={
+                <span className="font-mono">
+                  {group?.inviteCode ?? "------"}
+                </span>
+              }
+            />
+            <StatTile
+              label="Round"
+              value={
+                game ? `${game.currentRound}/${game.maxRounds}` : "Not started"
+              }
+            />
           </div>
 
-          <div className="flex flex-wrap gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-3">
             {(game || revealedDetail) && (
               <Link href="/results" className={secondaryButtonClass}>
                 View results
@@ -447,7 +399,12 @@ export function PlayShell({ initialState }: Props) {
               Manage account
             </Link>
             {status.urgent ? (
-              <span className="rounded-full bg-surface/75 px-3 py-2 text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+              <span
+                className={cx(
+                  toneBadgeClass("orange"),
+                  "uppercase tracking-[0.2em]"
+                )}
+              >
                 Needs your action
               </span>
             ) : null}
@@ -456,14 +413,17 @@ export function PlayShell({ initialState }: Props) {
       </section>
 
       {game?.status === "completed" ? (
-        <section className={cx(surfaceCardClass, "border-accent-yellow/45 bg-accent-yellow/10")}>
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-yellow-fg">
+        <section className={cx(toneCardClass("yellow"), "p-6 sm:p-7")}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-yellow-fg">
             Finished run
           </p>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight">This game is wrapped.</h2>
-          <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
-            Every round is complete. Use the scoreboard for the full history, then
-            start a new game from the setup section when your group is ready.
+          <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">
+            This game is wrapped.
+          </h2>
+          <p className="mt-3 max-w-prose text-sm leading-7 text-foreground/85">
+            Every round is complete. Use the scoreboard for the full history,
+            then start a new game from the setup section when your group is
+            ready.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link href="/results" className={secondaryButtonClass}>
@@ -477,13 +437,15 @@ export function PlayShell({ initialState }: Props) {
       ) : null}
 
       {group && groupRoster.length > 0 ? (
-        <section className={surfaceCardClass}>
-          <div className="flex items-end justify-between gap-4">
+        <section className={stickerCardClass}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
                 Club roster
               </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-tight">Who is in the room</h2>
+              <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+                Who is in the room
+              </h2>
             </div>
             <p className="text-xs text-foreground-secondary">
               {groupRoster.length} member{groupRoster.length === 1 ? "" : "s"}
@@ -491,21 +453,16 @@ export function PlayShell({ initialState }: Props) {
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {groupRoster.map((member, index) => (
-              <div
-                key={member.userId}
-                className="rounded-[24px] border border-border bg-surface-raised/70 p-4"
-              >
+              <div key={member.userId} className={innerMutedClass}>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-xs text-foreground-secondary">
+                  <span className="font-mono text-xs font-bold text-foreground-secondary">
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   {member.userId === viewerId ? (
-                    <span className="rounded-full bg-accent-pink/55 px-2 py-1 text-xs font-medium text-accent-pink-fg">
-                      You
-                    </span>
+                    <span className={toneBadgeClass("pink")}>You</span>
                   ) : null}
                 </div>
-                <p className="mt-3 text-sm font-semibold text-foreground">
+                <p className="mt-3 text-sm font-bold text-foreground">
                   {groupMemberLabel(viewerId, member.userId, groupRoster)}
                 </p>
                 <p className="mt-1 break-all text-xs text-foreground-secondary">
@@ -517,14 +474,17 @@ export function PlayShell({ initialState }: Props) {
         </section>
       ) : null}
 
-      {revealedDetail && game && game.status !== "completed" && round?.status === "revealed" ? (
-        <section className={cx(surfaceCardClass, "border-accent-yellow/45 bg-accent-yellow/10")}>
+      {revealedDetail &&
+      game &&
+      game.status !== "completed" &&
+      round?.status === "revealed" ? (
+        <section className={cx(toneCardClass("yellow"), "p-6 sm:p-7")}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-yellow-fg">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-yellow-fg">
                 Round {revealedDetail.roundNumber} revealed
               </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+              <h2 className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl">
                 {round.albumName}
               </h2>
               <p className="mt-2 text-sm text-foreground-secondary">
@@ -536,47 +496,38 @@ export function PlayShell({ initialState }: Props) {
                       href={round.albumUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="font-medium text-foreground underline-offset-4 hover:underline"
+                      className="font-bold text-foreground underline-offset-4 hover:underline"
                     >
                       Open link
                     </a>
                   </>
                 ) : null}
               </p>
-              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
+              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground/85">
                 Picked by{" "}
-                <span className="font-medium text-foreground">
-                  {memberLabel(viewerId, revealedDetail.pickerId, revealedDetail.roster)}
+                <span className="font-bold text-foreground">
+                  {memberLabel(
+                    viewerId,
+                    revealedDetail.pickerId,
+                    revealedDetail.roster
+                  )}
                 </span>
                 . Every score and note from the room is open now.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3 lg:w-[26rem] lg:grid-cols-1 xl:grid-cols-3">
-              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  Average
-                </p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                  {playRoundAvg != null ? playRoundAvg.toFixed(1) : "--"}
-                </p>
-              </div>
-              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  Reviews
-                </p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                  {revealedDetail.reviews.length}
-                </p>
-              </div>
-              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  Mood
-                </p>
-                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                  {playRoundAvg != null ? scoreLabel(playRoundAvg) : "No verdict"}
-                </p>
-              </div>
+              <StatTile
+                label="Average"
+                value={playRoundAvg != null ? playRoundAvg.toFixed(1) : "--"}
+              />
+              <StatTile label="Reviews" value={revealedDetail.reviews.length} />
+              <StatTile
+                label="Mood"
+                value={
+                  playRoundAvg != null ? scoreLabel(playRoundAvg) : "No verdict"
+                }
+              />
             </div>
           </div>
 
@@ -589,17 +540,21 @@ export function PlayShell({ initialState }: Props) {
               {revealedDetail.reviews.map((review) => (
                 <li
                   key={`${round.id}-${review.userId}`}
-                  className="rounded-[24px] border border-surface/70 bg-surface/85 p-4"
+                  className={innerMutedClass}
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-semibold text-foreground">
-                          {memberLabel(viewerId, review.userId, revealedDetail.roster)}
+                        <span className="text-sm font-bold text-foreground">
+                          {memberLabel(
+                            viewerId,
+                            review.userId,
+                            revealedDetail.roster
+                          )}
                         </span>
                         <span
                           className={cx(
-                            "rounded-full px-2 py-1 text-xs font-medium uppercase tracking-[0.16em]",
+                            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.16em]",
                             scoreToneClass(review.rating)
                           )}
                         >
@@ -609,7 +564,7 @@ export function PlayShell({ initialState }: Props) {
                     </div>
                     <span
                       className={cx(
-                        "shrink-0 rounded-full px-3 py-1 font-mono text-sm",
+                        "shrink-0 rounded-full px-3 py-1 font-mono text-sm font-bold",
                         scoreToneClass(review.rating)
                       )}
                     >
@@ -619,7 +574,11 @@ export function PlayShell({ initialState }: Props) {
                   {review.reviewText.trim() ? (
                     <p
                       className="mt-3 max-w-prose whitespace-pre-wrap text-sm leading-7 text-foreground-secondary [overflow-wrap:anywhere]"
-                      style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", wordBreak: "break-word" }}
+                      style={{
+                        whiteSpace: "pre-wrap",
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                      }}
                     >
                       {review.reviewText}
                     </p>
@@ -636,47 +595,59 @@ export function PlayShell({ initialState }: Props) {
       ) : null}
 
       {showHostRoundControl ? (
-        <section className={cx(surfaceCardClass, "border-accent-peach/40 bg-accent-peach/10")}>
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-peach-fg">
+        <section className={cx(toneCardClass("peach"), "p-6 sm:p-7")}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-peach-fg">
             Host controls
           </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight">Move the club forward</h2>
-          <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
-            Set the round limit before play begins, choose whether rounds auto-advance,
-            and start the next round when the room is ready.
+          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
+            Move the club forward
+          </h2>
+          <p className="mt-3 max-w-prose text-sm leading-7 text-foreground/85">
+            Set the round limit before play begins, choose whether rounds
+            auto-advance, and start the next round when the room is ready.
           </p>
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-            <div className={subtleCardClass}>
+            <div className={innerMutedClass}>
               <label className="flex cursor-pointer items-start gap-3 text-sm">
                 <input
                   type="checkbox"
-                  className="mt-0.5 size-4 rounded border-border accent-[var(--accent-orange)]"
+                  className="mt-0.5 size-4 rounded border-2 border-foreground accent-[var(--accent-orange)]"
                   checked={game.autoAdvance}
                   disabled={pending}
                   onChange={(event) => {
                     const next = event.target.checked;
                     setAutoAdvanceFb(null);
                     setState((current) =>
-                      current.game ? { ...current, game: { ...current.game, autoAdvance: next } } : current
+                      current.game
+                        ? {
+                            ...current,
+                            game: { ...current.game, autoAdvance: next },
+                          }
+                        : current
                     );
                     startTransition(async () => {
                       const result = await updateGameAutoAdvance(gameId, next);
                       if (!result.ok) {
-                        setAutoAdvanceFb({ kind: "error", message: result.message });
+                        setAutoAdvanceFb({
+                          kind: "error",
+                          message: result.message,
+                        });
                         refresh();
                         return;
                       }
                       setAutoAdvanceFb({
                         kind: "ok",
-                        message: next ? "Auto-advance is on." : "Auto-advance is off.",
+                        message: next
+                          ? "Auto-advance is on."
+                          : "Auto-advance is off.",
                       });
                       refresh();
                     });
                   }}
                 />
                 <span>
-                  <span className="block font-medium text-foreground">
+                  <span className="block font-bold text-foreground">
                     Auto-advance after the last review
                   </span>
                   <span className="mt-1 block text-foreground-secondary">
@@ -691,11 +662,11 @@ export function PlayShell({ initialState }: Props) {
               </div>
             </div>
 
-            <div className={subtleCardClass}>
+            <div className={innerMutedClass}>
               {game.currentRound === 0 ? (
                 <>
                   <label className="flex flex-col gap-2 text-sm">
-                    <span className="font-medium text-foreground">
+                    <span className="font-bold text-foreground">
                       Round limit (minimum {game.playerCount}, maximum 500)
                     </span>
                     <input
@@ -704,7 +675,9 @@ export function PlayShell({ initialState }: Props) {
                       max={500}
                       step={1}
                       value={maxRoundsDraft}
-                      onChange={(event) => setMaxRoundsDraft(event.target.value)}
+                      onChange={(event) =>
+                        setMaxRoundsDraft(event.target.value)
+                      }
                       className={cx(inputClass, "w-32")}
                     />
                   </label>
@@ -728,12 +701,21 @@ export function PlayShell({ initialState }: Props) {
                           return;
                         }
                         startTransition(async () => {
-                          const result = await updateGameMaxRounds(gameId, nextMax);
+                          const result = await updateGameMaxRounds(
+                            gameId,
+                            nextMax
+                          );
                           if (!result.ok) {
-                            setMaxRoundsFb({ kind: "error", message: result.message });
+                            setMaxRoundsFb({
+                              kind: "error",
+                              message: result.message,
+                            });
                             return;
                           }
-                          setMaxRoundsFb({ kind: "ok", message: "Round limit saved." });
+                          setMaxRoundsFb({
+                            kind: "ok",
+                            message: "Round limit saved.",
+                          });
                           refresh();
                         });
                       }}
@@ -745,13 +727,16 @@ export function PlayShell({ initialState }: Props) {
               ) : (
                 <p className="text-sm text-foreground-secondary">
                   Round limit is locked at{" "}
-                  <span className="font-semibold text-foreground">{game.maxRounds}</span>{" "}
+                  <span className="font-bold text-foreground">
+                    {game.maxRounds}
+                  </span>{" "}
                   because play has already started.
                 </p>
               )}
 
               <p className="mt-3 text-xs text-foreground-secondary">
-                There must be at least one round per player so everyone gets a pick.
+                There must be at least one round per player so everyone gets a
+                pick.
               </p>
               <div className="mt-3">
                 <Feedback fb={maxRoundsFb} />
@@ -803,37 +788,37 @@ export function PlayShell({ initialState }: Props) {
       ) : null}
 
       {showAlbumForm ? (
-        <section className={cx(surfaceCardClass, "border-accent-orange/45 bg-accent-orange/10 ring-1 ring-accent-orange/15")}>
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-orange-fg">
+        <section className={cx(toneCardClass("orange"), "p-6 sm:p-7")}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-orange-fg">
             Picker action
           </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight">
+          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
             Submit your album for round {game?.currentRound}
           </h2>
-          <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
-            This is the record everyone will live with for the round. Keep the link
-            optional, but the album and artist are required.
+          <p className="mt-3 max-w-prose text-sm leading-7 text-foreground/85">
+            This is the record everyone will live with for the round. Keep the
+            link optional, but the album and artist are required.
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium text-foreground">Album</span>
+            <label className="flex flex-col gap-2 text-sm font-bold">
+              <span className="text-foreground">Album</span>
               <input
                 value={albumName}
                 onChange={(event) => setAlbumName(event.target.value)}
                 className={inputClass}
               />
             </label>
-            <label className="flex flex-col gap-2 text-sm">
-              <span className="font-medium text-foreground">Artist</span>
+            <label className="flex flex-col gap-2 text-sm font-bold">
+              <span className="text-foreground">Artist</span>
               <input
                 value={artistName}
                 onChange={(event) => setArtistName(event.target.value)}
                 className={inputClass}
               />
             </label>
-            <label className="sm:col-span-2 flex flex-col gap-2 text-sm">
-              <span className="font-medium text-foreground">Album URL (optional)</span>
+            <label className="sm:col-span-2 flex flex-col gap-2 text-sm font-bold">
+              <span className="text-foreground">Album URL (optional)</span>
               <input
                 value={albumUrl}
                 onChange={(event) => setAlbumUrl(event.target.value)}
@@ -852,7 +837,10 @@ export function PlayShell({ initialState }: Props) {
                 setAlbumFb(null);
                 const normalizedAlbumUrl = normalizeOptionalHttpUrl(albumUrl);
                 if (!normalizedAlbumUrl.ok) {
-                  setAlbumFb({ kind: "error", message: normalizedAlbumUrl.message });
+                  setAlbumFb({
+                    kind: "error",
+                    message: normalizedAlbumUrl.message,
+                  });
                   return;
                 }
                 startTransition(async () => {
@@ -887,57 +875,52 @@ export function PlayShell({ initialState }: Props) {
       ) : null}
 
       {showReviewForm ? (
-        <section className={cx(surfaceCardClass, "border-accent-pink/35 bg-accent-pink/10")}>
+        <section className={cx(toneCardClass("pink"), "p-6 sm:p-7")}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-pink-fg">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-pink-fg">
                 Review panel
               </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+              <h2 className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl">
                 Write your take for round {game?.currentRound}
               </h2>
-              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground-secondary">
-                Score the album, leave a note if you have one, and your review stays hidden
-                until the room reaches the reveal.
+              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground/85">
+                Score the album, leave a note if you have one, and your review
+                stays hidden until the room reaches the reveal.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3 lg:w-[26rem] lg:grid-cols-1 xl:grid-cols-3">
-              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  Current score
-                </p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                  {Number.isFinite(parsedRating) ? ratingValue.toFixed(1) : "--"}
-                </p>
-              </div>
-              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  Feeling
-                </p>
-                <p className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                  {Number.isFinite(parsedRating) ? scoreLabel(ratingValue) : "Pick a score"}
-                </p>
-              </div>
-              <div className="rounded-[24px] border border-surface/70 bg-surface/85 px-5 py-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                  Note length
-                </p>
-                <p className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
-                  {reviewWords}
-                </p>
-              </div>
+              <StatTile
+                label="Current score"
+                value={
+                  Number.isFinite(parsedRating)
+                    ? ratingValue.toFixed(1)
+                    : "--"
+                }
+              />
+              <StatTile
+                label="Feeling"
+                value={
+                  Number.isFinite(parsedRating)
+                    ? scoreLabel(ratingValue)
+                    : "Pick a score"
+                }
+              />
+              <StatTile label="Note length" value={reviewWords} />
             </div>
           </div>
 
           {round?.albumName ? (
-            <div className="mt-5 rounded-[24px] border border-accent-yellow/40 bg-accent-yellow/12 p-5">
+            <div className="mt-5 rounded-2xl border-2 border-foreground bg-accent-yellow/30 p-5 landing-sticker-sm">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="max-w-2xl">
-                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-yellow-fg">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-yellow-fg">
                     Current album
                   </p>
-                  <p className="mt-2 text-xl font-semibold text-foreground">{round.albumName}</p>
+                  <p className="mt-2 text-xl font-black tracking-tight text-foreground">
+                    {round.albumName}
+                  </p>
                   <p className="mt-1 text-sm text-foreground-secondary">
                     {round.artistName}
                     {round.albumUrl ? (
@@ -947,7 +930,7 @@ export function PlayShell({ initialState }: Props) {
                           href={round.albumUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-medium text-foreground underline-offset-4 hover:underline"
+                          className="font-bold text-foreground underline-offset-4 hover:underline"
                         >
                           Open link
                         </a>
@@ -955,11 +938,11 @@ export function PlayShell({ initialState }: Props) {
                     ) : null}
                   </p>
                 </div>
-                <div className="grid gap-2 text-sm text-foreground-secondary">
-                  <span className="rounded-full bg-surface/85 px-3 py-2">
+                <div className="grid gap-2 text-xs">
+                  <span className="inline-flex items-center rounded-full border-2 border-foreground/15 bg-surface px-3 py-1 font-bold text-foreground-secondary">
                     Hidden until reveal
                   </span>
-                  <span className="rounded-full bg-surface/85 px-3 py-2">
+                  <span className="inline-flex items-center rounded-full border-2 border-foreground/15 bg-surface px-3 py-1 font-bold text-foreground-secondary">
                     Decimals allowed
                   </span>
                 </div>
@@ -968,9 +951,9 @@ export function PlayShell({ initialState }: Props) {
           ) : null}
 
           <div className="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
-            <div className="rounded-[24px] border border-surface/70 bg-surface/85 p-5">
-              <label className="flex flex-col gap-2 text-sm">
-                <span className="font-medium text-foreground">Rating (1-10)</span>
+            <div className="rounded-2xl border-2 border-foreground bg-surface p-5 landing-sticker-sm">
+              <label className="flex flex-col gap-2 text-sm font-bold">
+                <span className="text-foreground">Rating (1-10)</span>
                 <input
                   type="number"
                   min={1}
@@ -983,30 +966,35 @@ export function PlayShell({ initialState }: Props) {
               </label>
 
               <div className="mt-4">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
                   Quick picks
                 </p>
                 <div className="mt-3 grid grid-cols-5 gap-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={cx(
-                        "rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors",
-                        Number.isFinite(parsedRating) && Math.abs(ratingValue - value) < 0.05
-                          ? "border-accent-orange bg-accent-orange text-white"
-                          : "border-border bg-surface hover:bg-surface-raised"
-                      )}
-                      onClick={() => setRating(String(value))}
-                    >
-                      {value}
-                    </button>
-                  ))}
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((value) => {
+                    const isSelected =
+                      Number.isFinite(parsedRating) &&
+                      Math.abs(ratingValue - value) < 0.05;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        className={cx(
+                          "min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-bold transition-[transform,box-shadow,background-color]",
+                          isSelected
+                            ? "border-foreground bg-accent-orange text-white landing-sticker-sm"
+                            : "border-foreground/15 bg-surface text-foreground hover:bg-surface-raised"
+                        )}
+                        onClick={() => setRating(String(value))}
+                      >
+                        {value}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <label className="mt-5 flex flex-col gap-2 text-sm">
-                <span className="font-medium text-foreground">Review (optional)</span>
+              <label className="mt-5 flex flex-col gap-2 text-sm font-bold">
+                <span className="text-foreground">Review (optional)</span>
                 <textarea
                   value={reviewText}
                   rows={6}
@@ -1024,7 +1012,11 @@ export function PlayShell({ initialState }: Props) {
                   onClick={() => {
                     setReviewFb(null);
                     startTransition(async () => {
-                      const result = await submitReview(roundId, Number(rating), reviewText);
+                      const result = await submitReview(
+                        roundId,
+                        Number(rating),
+                        reviewText
+                      );
                       if (!result.ok) {
                         setReviewFb({ kind: "error", message: result.message });
                         return;
@@ -1033,7 +1025,10 @@ export function PlayShell({ initialState }: Props) {
                       if (result.data.revealed) {
                         router.push("/results");
                       } else {
-                        setReviewFb({ kind: "ok", message: "Review recorded." });
+                        setReviewFb({
+                          kind: "ok",
+                          message: "Review recorded.",
+                        });
                         refresh(round?.status);
                       }
                     });
@@ -1048,35 +1043,50 @@ export function PlayShell({ initialState }: Props) {
             </div>
 
             <div className="grid gap-4">
-              <div className="rounded-[24px] border border-accent-lime/35 bg-accent-lime/10 p-5">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-lime-fg">
+              <div
+                className={cx(
+                  toneCardClass("lime"),
+                  "p-5 [box-shadow:3px_3px_0_0_var(--foreground)]"
+                )}
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-lime-fg">
                   Live read
                 </p>
-                <div className="mt-3 flex items-center gap-3">
+                <div className="mt-3 flex flex-wrap items-center gap-3">
                   <span
                     className={cx(
-                      "rounded-full px-3 py-1 text-sm font-medium",
+                      "inline-flex items-center rounded-full px-3 py-1 text-sm font-bold",
                       Number.isFinite(parsedRating)
                         ? scoreToneClass(ratingValue)
-                        : "bg-surface text-foreground-secondary"
+                        : "border-2 border-foreground/15 bg-surface text-foreground-secondary"
                     )}
                   >
-                    {Number.isFinite(parsedRating) ? `${ratingValue.toFixed(1)} / 10` : "No score yet"}
+                    {Number.isFinite(parsedRating)
+                      ? `${ratingValue.toFixed(1)} / 10`
+                      : "No score yet"}
                   </span>
-                  <span className="text-sm font-semibold text-foreground">
-                    {Number.isFinite(parsedRating) ? scoreLabel(ratingValue) : "Waiting on your score"}
+                  <span className="text-sm font-bold text-foreground">
+                    {Number.isFinite(parsedRating)
+                      ? scoreLabel(ratingValue)
+                      : "Waiting on your score"}
                   </span>
                 </div>
-                <p className="mt-3 text-sm leading-7 text-foreground-secondary">
-                  Your note is private until reveal. Once submitted, you cannot keep editing here while the room waits.
+                <p className="mt-3 text-sm leading-7 text-foreground/85">
+                  Your note is private until reveal. Once submitted, you cannot
+                  keep editing here while the room waits.
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-accent-peach/40 bg-accent-peach/10 p-5">
-                <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-peach-fg">
+              <div
+                className={cx(
+                  toneCardClass("peach"),
+                  "p-5 [box-shadow:3px_3px_0_0_var(--foreground)]"
+                )}
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-peach-fg">
                   Good review prompts
                 </p>
-                <ul className="mt-3 space-y-2 text-sm leading-7 text-foreground-secondary">
+                <ul className="mt-3 space-y-2 text-sm leading-7 text-foreground/85">
                   <li>What is this album trying to do?</li>
                   <li>Which track or moment changed your score the most?</li>
                   <li>Would you revisit it outside the game?</li>
@@ -1088,20 +1098,31 @@ export function PlayShell({ initialState }: Props) {
       ) : null}
 
       {noGroup || needsGameCreation ? (
-        <section className={surfaceCardClass}>
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+        <section className={stickerCardClass}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
             Setup
           </p>
-          <h2 className="mt-2 text-xl font-semibold tracking-tight">
+          <h2 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">
             Build the room before the round starts
           </h2>
 
           {noGroup ? (
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
-              <div className={cx(subtleCardClass, "border-accent-pink/35 bg-accent-pink/10")}>
-                <p className="text-sm font-semibold text-foreground">Create a group</p>
-                <p className="mt-2 text-sm leading-7 text-foreground-secondary">
-                  Start a new private album club and get an invite code for everyone else.
+              <div
+                className={cx(
+                  toneCardClass("pink"),
+                  "p-5 [box-shadow:3px_3px_0_0_var(--foreground)]"
+                )}
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-pink-fg">
+                  Create
+                </p>
+                <p className="mt-2 text-base font-black tracking-tight text-foreground">
+                  Start a new group
+                </p>
+                <p className="mt-2 text-sm leading-7 text-foreground/85">
+                  Start a new private album club and get an invite code for
+                  everyone else.
                 </p>
                 <div className="mt-4 flex flex-col gap-3">
                   <input
@@ -1119,7 +1140,10 @@ export function PlayShell({ initialState }: Props) {
                       startTransition(async () => {
                         const result = await createGroup(groupName);
                         if (!result.ok) {
-                          setGroupFb({ kind: "error", message: result.message });
+                          setGroupFb({
+                            kind: "error",
+                            message: result.message,
+                          });
                           return;
                         }
                         setGroupFb({
@@ -1139,18 +1163,31 @@ export function PlayShell({ initialState }: Props) {
                 </div>
               </div>
 
-              <div className={cx(subtleCardClass, "border-accent-lime/35 bg-accent-lime/10")}>
-                <p className="text-sm font-semibold text-foreground">Join with an invite code</p>
-                <p className="mt-2 text-sm leading-7 text-foreground-secondary">
-                  Already invited? Enter the six-character code to join the room.
+              <div
+                className={cx(
+                  toneCardClass("lime"),
+                  "p-5 [box-shadow:3px_3px_0_0_var(--foreground)]"
+                )}
+              >
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-lime-fg">
+                  Join
+                </p>
+                <p className="mt-2 text-base font-black tracking-tight text-foreground">
+                  Use an invite code
+                </p>
+                <p className="mt-2 text-sm leading-7 text-foreground/85">
+                  Already invited? Enter the six-character code to join the
+                  room.
                 </p>
                 <div className="mt-4 flex flex-col gap-3">
                   <input
                     value={joinInvite}
-                    onChange={(event) => setJoinInvite(event.target.value.toUpperCase())}
+                    onChange={(event) =>
+                      setJoinInvite(event.target.value.toUpperCase())
+                    }
                     placeholder="ABC123"
                     maxLength={6}
-                    className={cx(inputClass, "font-mono")}
+                    className={cx(inputClass, "font-mono tracking-[0.18em]")}
                   />
                   <button
                     type="button"
@@ -1161,7 +1198,10 @@ export function PlayShell({ initialState }: Props) {
                       startTransition(async () => {
                         const result = await joinGroup(joinInvite);
                         if (!result.ok) {
-                          setJoinFb({ kind: "error", message: result.message });
+                          setJoinFb({
+                            kind: "error",
+                            message: result.message,
+                          });
                           return;
                         }
                         setJoinFb({ kind: "ok", message: "Joined group." });
@@ -1181,16 +1221,26 @@ export function PlayShell({ initialState }: Props) {
           ) : null}
 
           {needsGameCreation && group ? (
-            <div className="mt-5 rounded-[26px] border border-accent-peach/40 bg-accent-peach/10 p-5">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-peach-fg">
+            <div
+              className={cx(
+                toneCardClass("peach"),
+                "mt-5 p-5 [box-shadow:3px_3px_0_0_var(--foreground)]"
+              )}
+            >
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-peach-fg">
                 Game setup
               </p>
-              <h3 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
-                {game?.status === "completed" ? "Start another run" : `Start a game for ${group.name}`}
+              <h3 className="mt-2 text-xl font-black tracking-tight text-foreground">
+                {game?.status === "completed"
+                  ? "Start another run"
+                  : `Start a game for ${group.name}`}
               </h3>
-              <p className="mt-3 text-sm leading-7 text-foreground-secondary">
+              <p className="mt-3 text-sm leading-7 text-foreground/85">
                 Invite code{" "}
-                <span className="font-mono font-semibold text-foreground">{group.inviteCode}</span>.
+                <span className="font-mono font-bold text-foreground">
+                  {group.inviteCode}
+                </span>
+                .
                 {game?.status === "completed"
                   ? " This starts a fresh scoreboard for the same group."
                   : " The creator becomes the host for this game."}
@@ -1225,15 +1275,17 @@ export function PlayShell({ initialState }: Props) {
       ) : null}
 
       {group && game && game.status !== "completed" ? (
-        <section className={cx(surfaceCardClass, "border-accent-lime/35 bg-accent-lime/10")}>
+        <section className={cx(toneCardClass("lime"), "p-6 sm:p-7")}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-accent-lime-fg">
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-lime-fg">
                 Club access
               </p>
-              <h2 className="mt-2 text-lg font-semibold tracking-tight">Invite code</h2>
+              <h2 className="mt-2 text-xl font-black tracking-tight">
+                Invite code
+              </h2>
             </div>
-            <span className="font-mono text-lg font-semibold tracking-[0.2em] text-foreground">
+            <span className="inline-flex items-center rounded-full border-2 border-foreground bg-surface px-4 py-2 font-mono text-base font-black tracking-[0.22em] text-foreground landing-sticker-sm">
               {group.inviteCode}
             </span>
           </div>
@@ -1241,11 +1293,11 @@ export function PlayShell({ initialState }: Props) {
       ) : null}
 
       {group ? (
-        <section className={surfaceCardClass}>
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+        <section className={stickerCardClass}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
             Membership
           </p>
-          <h2 className="mt-2 text-lg font-semibold tracking-tight">
+          <h2 className="mt-2 text-xl font-black tracking-tight sm:text-2xl">
             Leave {group.name}
           </h2>
 
@@ -1260,12 +1312,13 @@ export function PlayShell({ initialState }: Props) {
               </button>
             </div>
           ) : (
-            <div className="mt-4 rounded-[24px] border border-red-200 bg-red-50 p-4 dark:border-red-950/50 dark:bg-red-950/20">
-              <p className="text-sm leading-7 text-foreground-secondary">
-                If you are the only member, the group and its game data will be removed.
-                If other members remain and you host an active game, end that game first.
+            <div className="mt-4 flex flex-col gap-3 rounded-2xl border-2 border-red-300 bg-red-50 p-4 dark:border-red-900/60 dark:bg-red-950/30">
+              <p className="text-sm leading-7 text-foreground/85">
+                If you are the only member, the group and its game data will be
+                removed. If other members remain and you host an active game,
+                end that game first.
               </p>
-              <div className="mt-4 flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
                   disabled={pending}
@@ -1284,7 +1337,7 @@ export function PlayShell({ initialState }: Props) {
                     });
                   }}
                 >
-                  Yes, leave group
+                  {pending ? "Leaving..." : "Yes, leave group"}
                 </button>
                 <button
                   type="button"
@@ -1297,9 +1350,7 @@ export function PlayShell({ initialState }: Props) {
                   Cancel
                 </button>
               </div>
-              <div className="mt-3">
-                <Feedback fb={leaveFb} />
-              </div>
+              <Feedback fb={leaveFb} />
             </div>
           )}
         </section>

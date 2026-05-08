@@ -14,40 +14,43 @@ export async function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border/70 bg-background/85 backdrop-blur-xl">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-20 border-b-2 border-foreground/10 bg-background/85 backdrop-blur-xl">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link
           href="/"
-          className="flex min-w-0 items-center gap-3 text-foreground transition-opacity hover:opacity-85"
+          className="flex min-w-0 items-center gap-3 text-foreground transition-opacity hover:opacity-90"
         >
-          <span className="flex h-11 w-11 items-center justify-center rounded-[1.35rem] border border-border bg-[linear-gradient(135deg,var(--accent-pink),var(--accent-yellow),var(--accent-lime))] text-sm font-semibold text-foreground shadow-sm">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-foreground bg-[linear-gradient(135deg,var(--accent-pink),var(--accent-yellow),var(--accent-lime))] text-base font-black text-foreground landing-sticker-sm">
             M
           </span>
           <span className="min-w-0">
-            <span className="block text-lg font-semibold tracking-tight">Mania</span>
-            <span className="block text-[11px] uppercase tracking-[0.22em] text-foreground-secondary">
-              Book club for albums
+            <span className="block text-lg font-black tracking-tight">Mania</span>
+            <span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
+              Album leagues
             </span>
           </span>
         </Link>
-        <nav className="flex items-center gap-1 rounded-full border border-border bg-surface/90 p-1 text-sm font-medium shadow-sm sm:gap-2">
+        <nav
+          aria-label="Primary"
+          className="flex items-center gap-1 rounded-2xl border-2 border-foreground/15 bg-surface/95 p-1 text-sm font-bold landing-sticker-sm sm:gap-1.5"
+        >
           {user ? (
             <>
               <Link
                 href="/play"
-                className="rounded-full px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
+                className="rounded-xl px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
               >
                 Play
               </Link>
               <Link
                 href="/results"
-                className="rounded-full px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
+                className="rounded-xl px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
               >
                 Results
               </Link>
               <Link
                 href="/account"
-                className="rounded-full border border-border bg-surface px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
+                className="rounded-xl border-2 border-foreground bg-foreground px-3 py-2 text-background transition-opacity hover:opacity-90"
               >
                 Account
               </Link>
@@ -56,13 +59,13 @@ export async function SiteHeader() {
             <>
               <Link
                 href="/login"
-                className="rounded-full px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
+                className="rounded-xl px-3 py-2 text-foreground transition-colors hover:bg-surface-raised"
               >
                 Sign in
               </Link>
               <Link
                 href="/signup"
-                className="rounded-full bg-accent-orange px-4 py-2 text-white transition-colors hover:bg-accent-orange-hover"
+                className="rounded-xl border-2 border-foreground bg-accent-orange px-3 py-2 text-white transition-colors hover:bg-accent-orange-hover"
               >
                 Sign up
               </Link>

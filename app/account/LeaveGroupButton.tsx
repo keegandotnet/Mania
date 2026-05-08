@@ -2,9 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import {
+  destructiveButtonClass,
+  secondaryButtonClass,
+} from "@/app/components/ui";
 import { leaveGroup } from "@/app/actions/mania";
 
 type Props = { groupId: string; groupName: string; memberCount: number };
+
+const triggerClass =
+  "inline-flex min-h-9 shrink-0 items-center justify-center rounded-xl border-2 border-red-300 bg-surface px-3 text-xs font-bold text-red-600 transition-colors hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/30";
 
 export function LeaveGroupButton({ groupId, groupName, memberCount }: Props) {
   const router = useRouter();
@@ -19,7 +26,7 @@ export function LeaveGroupButton({ groupId, groupName, memberCount }: Props) {
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="shrink-0 rounded-md border border-red-200 bg-surface px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:border-red-950/50 dark:text-red-400 dark:hover:bg-red-950/20"
+        className={triggerClass}
       >
         Leave group
       </button>
@@ -27,22 +34,28 @@ export function LeaveGroupButton({ groupId, groupName, memberCount }: Props) {
   }
 
   return (
-    <div className="flex max-w-sm flex-col gap-3 rounded-[20px] border border-red-200 bg-red-50 p-4 dark:border-red-950/50 dark:bg-red-950/20">
-      <p className="text-sm leading-7 text-foreground-secondary">
+    <div className="flex max-w-sm flex-col gap-3 rounded-2xl border-2 border-red-300 bg-red-50 p-4 dark:border-red-900/60 dark:bg-red-950/30">
+      <p className="text-sm leading-7 text-foreground/85">
         {isLastMember ? (
           <>
-            You are the only member of <span className="font-medium text-foreground">{groupName}</span>. The group will
-            be empty after you leave, but your game history stays intact.
+            You are the only member of{" "}
+            <span className="font-bold text-foreground">{groupName}</span>. The
+            group will be empty after you leave, but your game history stays
+            intact.
           </>
         ) : (
           <>
-            Leave <span className="font-medium text-foreground">{groupName}</span>? Your game history stays intact.
+            Leave <span className="font-bold text-foreground">{groupName}</span>?
+            Your game history stays intact.
           </>
         )}
       </p>
 
       {error ? (
-        <p className="text-sm text-red-600 dark:text-red-400" role="alert">
+        <p
+          role="alert"
+          className="text-sm font-medium text-red-700 dark:text-red-400"
+        >
           {error}
         </p>
       ) : null}
@@ -63,7 +76,7 @@ export function LeaveGroupButton({ groupId, groupName, memberCount }: Props) {
               router.refresh();
             });
           }}
-          className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-40"
+          className={destructiveButtonClass}
         >
           {pending ? "Leaving..." : "Confirm leave"}
         </button>
@@ -71,7 +84,7 @@ export function LeaveGroupButton({ groupId, groupName, memberCount }: Props) {
           type="button"
           disabled={pending}
           onClick={() => setConfirming(false)}
-          className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-surface-raised disabled:opacity-40"
+          className={secondaryButtonClass}
         >
           Cancel
         </button>

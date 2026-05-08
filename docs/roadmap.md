@@ -15,26 +15,27 @@
 - ✅ Group management on /account (leave group, view invite codes)
 - ✅ Export / share-friendly results summary
 
-## Phase 2 — UI overhaul
+## Phase 2 — UI overhaul (sticker / friendly-brutalist system)
 
-Design system defined in `docs/design.md`. Shipping in small sprints:
+Sticker system defined in `docs/design.md` and implemented via shared primitives in `app/components/ui.tsx`. All product surfaces now share thick borders, hard offset shadows, bold display type, and tone-aware cards/badges/eyebrows.
 
 - ✅ Design tokens defined (`globals.css`, `docs/design.md`)
-- 🔲 Sprint 2: SiteHeader polish + landing page (`/`) with real product copy
-- 🔲 Sprint 3: `/account` page — groups + games sections
-- 🔲 Sprint 4: `/play` — game state cards (your turn / waiting / submitted / revealed)
-- 🔲 Sprint 5: `/results` — round cards, score display
-- 🔲 Sprint 6: Login / signup forms
+- ✅ Sprint 2: SiteHeader + landing page (`/`) — sticker hero, screenshot carousel, gamey copy
+- ✅ Sprint 3: `/account` page — sticker groups + games sections, leave-group confirm flow
+- ✅ Sprint 4: `/play` — sticker `PlayShell` (your turn / waiting / submitted / revealed cards, host controls, setup, picker + review forms)
+- ✅ Sprint 5: `/results` — sticker `ResultsView` (round archive, scoreboard, share summary)
+- ✅ Sprint 6: Login / signup forms — sticker shells with shared `inputClass` + `primaryButtonLgClass`
 
 ## Phase 2.5 — Landing page
 
 A public-facing `/` that explains what Mania is, with clear CTAs (sign up / sign in). Needed before sharing with new players.
 
-- Mobile-first vertical layout with fewer widgets and a clearer story
-- Gamey visual direction with richer color, layered cards, and tasteful motion
-- Screenshot carousel using placeholder/screenshot-style app panels first
-- "How it works" — 3-step explainer (create group → pick albums → rate & review)
-- Sign up CTA (primary orange button)
+- ✅ Mobile-first vertical layout with fewer widgets and a clearer story
+- ✅ Gamey visual direction with richer color, layered cards, and tasteful motion
+- ✅ Screenshot carousel using placeholder/screenshot-style app panels first
+- ✅ "How it works" — 3-step explainer (create group → pick albums → rate & review)
+- ✅ Sign up CTA (primary orange button)
+- Deferred: replace placeholder panels with authenticated product screenshots when the app surfaces settle.
 
 ## Phase 3 — Spotify integration
 
