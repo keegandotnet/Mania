@@ -14,6 +14,15 @@ A **vertical** means:
 
 Pure documentation-only or test-only work is fine **inside** that vertical (e.g. extend smoke tests for the RPCs you just added). Avoid shipping **only** tests/docs with **no** user-visible or API surface change unless the task is explicitly scoped as an exception.
 
+## Branch workflow for major upgrades
+
+Before starting a major feature, UI overhaul, schema change, or other substantial vertical, work on a dedicated git branch instead of `main`.
+
+- Check the current branch and working tree first.
+- If on `main`, create a descriptive branch before editing, e.g. `feature/gamey-landing-page` or `upgrade/results-sharing`.
+- If there are already uncommitted changes, do **not** move or rewrite them without user consent. Ask whether to continue on the current branch, create a branch with the existing changes, or pause for cleanup.
+- Small docs-only follow-ups and emergency fixes can stay on the current branch unless the user asks otherwise.
+
 ### Exceptions (must be stated in `docs/next-task-agent-prompt.md`)
 
 - **Hardening-only:** e.g. RLS audit, extended `rls-smoke`, migration repair — no new UI; call this out in the task title and "Context" so the next sprint returns to a product vertical.

@@ -39,11 +39,11 @@ Unless noted, actions require a signed-in user; otherwise they return `unauthori
 
 ---
 
-### `getGameResults()`
+### `getGameResults(gameId?)`
 
-**Parameters:** none.
+**Parameters:** optional `gameId: string`. When omitted, resolves the caller's latest game in their most recently joined group. When provided, loads that specific game if RLS allows the caller to read it.
 
-Resolves **the same "my latest group" + "latest game in that group"** as `getMyGameState` (via `group_members` → `groups` → `games` ordered by `created_at` desc).
+Without `gameId`, resolves **the same "my latest group" + "latest game in that group"** as `getMyGameState` (via `group_members` → `groups` → `games` ordered by `created_at` desc). `/results?game=<uuid>` passes `gameId` so account-history links render and share the scoped game instead of the default latest game.
 
 **Success `data` shape (`GameResultsData`):**
 
@@ -70,6 +70,42 @@ Resolves **the same "my latest group" + "latest game in that group"** as `getMyG
 **Used by:** `/results` — revealed rounds only; empty `rounds` if none revealed yet.
 
 **Data access:** RLS-scoped `SELECT` on `games`, `game_members`, `rounds`, `reviews`, `profiles` (viewer). Calls `get_game_member_emails` RPC to add `email` and `displayName` to roster rows.
+
+---
+
+## Results summary formatter (`lib/mania/resultsSummary.ts`)
+
+### `buildResultsShareSummary(data)`
+
+**Parameters:** `GameResultsData` from `getGameResults(gameId?)`.
+
+**Returns:** deterministic plain text suitable for clipboard sharing. The formatter is pure: it imports no React, Next.js runtime APIs, Supabase clients, or browser APIs.
+
+The output includes:
+
+- Group name and game context (`Game complete` / `In progress`, current round, max rounds, revealed-round count).
+- Each revealed round in `roundNumber` order.
+- Album, artist, optional listen URL, picker, average score formatted as `x.x`, reviewer scores, and written reviews when present.
+- Player labels via the shared `memberLabel` display-name/email fallback behavior.
+
+Example:
+
+```text
+Friday Club results
+Game complete - Round 2 of 2 - 2 revealed rounds
+
+Round 1: First Album by The Firsts
+Picked by Alice
+Average: 8.5 from 2 reviews
+Listen: https://example.com/first
+Scores: Alice 9.0, Bob 8.0
+Reviews:
+- Alice (9.0): Immediate replay.
+- Bob (8.0): Sharp hooks.
+  Strong finish.
+```
+
+`/results` renders the clipboard control only when there is at least one revealed round. Clipboard writes happen in a small client component so formatter output remains reusable for future server-rendered exports, public links, or native share flows.
 
 ---
 

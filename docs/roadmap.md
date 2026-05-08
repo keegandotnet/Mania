@@ -13,7 +13,7 @@
 - ✅ Email-based player identification
 - ✅ Display names / user profiles
 - ✅ Group management on /account (leave group, view invite codes)
-- 🔲 Export / share-friendly results summary
+- ✅ Export / share-friendly results summary
 
 ## Phase 2 — UI overhaul
 
@@ -30,9 +30,10 @@ Design system defined in `docs/design.md`. Shipping in small sprints:
 
 A public-facing `/` that explains what Mania is, with clear CTAs (sign up / sign in). Needed before sharing with new players.
 
-- Headline + one-sentence description
+- Mobile-first vertical layout with fewer widgets and a clearer story
+- Gamey visual direction with richer color, layered cards, and tasteful motion
+- Screenshot carousel using placeholder/screenshot-style app panels first
 - "How it works" — 3-step explainer (create group → pick albums → rate & review)
-- Social proof / empty state if no active games
 - Sign up CTA (primary orange button)
 
 ## Phase 3 — Spotify integration

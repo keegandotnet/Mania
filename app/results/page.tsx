@@ -6,17 +6,24 @@ import { ResultsView } from "./ResultsView";
 
 export const dynamic = "force-dynamic";
 
-export default async function ResultsPage() {
+type ResultsPageProps = {
+  searchParams?: Promise<{ game?: string }>;
+};
+
+export default async function ResultsPage(props: ResultsPageProps) {
+  const searchParams = (await props.searchParams) ?? {};
+  const scopedGameId = searchParams.game?.trim() || undefined;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?next=/results");
+    const nextPath = scopedGameId ? `/results?game=${encodeURIComponent(scopedGameId)}` : "/results";
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
 
-  const result = await getGameResults();
+  const result = await getGameResults(scopedGameId);
   const data: GameResultsData = result.ok
     ? result.data
     : {

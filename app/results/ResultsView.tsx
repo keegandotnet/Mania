@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { GameResultsData, GameResultsRosterRow, GameResultsRound } from "@/app/actions/mania";
 import { memberLabel } from "@/lib/mania/memberLabel";
+import { buildResultsShareSummary } from "@/lib/mania/resultsSummary";
+import { CopyResultsSummaryButton } from "./CopyResultsSummaryButton";
 
 type Props = { data: GameResultsData };
 
@@ -142,6 +144,7 @@ export function ResultsView({ data }: Props) {
           (averageAcrossRounds.reduce((total, score) => total + score, 0) / averageAcrossRounds.length) * 10
         ) / 10
       : null;
+  const shareSummary = rounds.length > 0 ? buildResultsShareSummary(data) : null;
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
@@ -324,36 +327,39 @@ export function ResultsView({ data }: Props) {
               </p>
             </section>
           ) : (
-            <section className="flex min-w-0 flex-col gap-4">
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
-                    Revealed rounds
+            <>
+              {shareSummary ? <CopyResultsSummaryButton summary={shareSummary} /> : null}
+
+              <section className="flex min-w-0 flex-col gap-4">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.16em] text-foreground-secondary">
+                      Revealed rounds
+                    </p>
+                    <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+                      Round archive
+                    </h2>
+                  </div>
+                  <p className="text-xs text-foreground-secondary">
+                    Newest reveal at the bottom
                   </p>
-                  <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-                    Round archive
-                  </h2>
                 </div>
-                <p className="text-xs text-foreground-secondary">
-                  Newest reveal at the bottom
-                </p>
-              </div>
 
-              <ul className="grid gap-4">
-                {roundStats.map((entry) => {
-                  const { round, avg, reviewCount, wordTotal } = entry;
-                  const isBest = bestRound?.round.id === round.id;
+                <ul className="grid gap-4">
+                  {roundStats.map((entry) => {
+                    const { round, avg, reviewCount, wordTotal } = entry;
+                    const isBest = bestRound?.round.id === round.id;
 
-                  return (
-                    <li
-                      key={round.id}
-                      className={cx(
-                        "rounded-[30px] border p-5 shadow-sm",
-                        isBest
-                          ? "border-accent-yellow/45 bg-accent-yellow/12"
-                          : "border-border bg-surface"
-                      )}
-                    >
+                    return (
+                      <li
+                        key={round.id}
+                        className={cx(
+                          "rounded-[30px] border p-5 shadow-sm",
+                          isBest
+                            ? "border-accent-yellow/45 bg-accent-yellow/12"
+                            : "border-border bg-surface"
+                        )}
+                      >
                       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                         <div className="max-w-2xl">
                           <div className="flex flex-wrap items-center gap-2">
@@ -487,11 +493,12 @@ export function ResultsView({ data }: Props) {
                           ))}
                         </ul>
                       )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            </>
           )}
 
           <section className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">

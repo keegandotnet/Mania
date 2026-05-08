@@ -293,7 +293,7 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
   });
 }
 
-export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
+export async function getGameResults(gameId?: string): Promise<ActionResult<GameResultsData>> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -317,44 +317,80 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
     rounds: [],
   };
 
-  const { data: membership } = await supabase
-    .from("group_members")
-    .select("group_id, joined_at")
-    .eq("user_id", user.id)
-    .order("joined_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  type ResultsGameRow = {
+    id: string;
+    status: string;
+    current_round: number;
+    max_rounds: number;
+    group_id: string;
+    groups?: { name: string; invite_code: string } | { name: string; invite_code: string }[] | null;
+  };
 
-  if (!membership) return ok(empty);
+  let groupForResults: { name: string; inviteCode: string } | null = null;
+  let gameForResults: ResultsGameRow | null = null;
+  const requestedGameId = gameId?.trim() || null;
 
-  const { data: group, error: gErr } = await supabase
-    .from("groups")
-    .select("id, name, invite_code")
-    .eq("id", membership.group_id)
-    .maybeSingle();
-  if (gErr) return fromPostgrestError(gErr as PostgrestError);
-  if (!group) return ok(empty);
+  if (requestedGameId) {
+    const { data: scopedGame, error: scopedGameErr } = await supabase
+      .from("games")
+      .select("id, status, current_round, max_rounds, group_id, groups(name, invite_code)")
+      .eq("id", requestedGameId)
+      .maybeSingle();
+    if (scopedGameErr) return fromPostgrestError(scopedGameErr as PostgrestError);
+    if (!scopedGame) return ok(empty);
 
-  const { data: game, error: gameErr } = await supabase
-    .from("games")
-    .select("id, status, current_round, max_rounds")
-    .eq("group_id", group.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (gameErr) return fromPostgrestError(gameErr as PostgrestError);
+    gameForResults = scopedGame as unknown as ResultsGameRow;
+    const joinedGroup = Array.isArray(gameForResults.groups) ? gameForResults.groups[0] : gameForResults.groups;
+    groupForResults = {
+      name: joinedGroup?.name ?? "Unknown group",
+      inviteCode: joinedGroup?.invite_code ?? "",
+    };
+  } else {
+    const { data: membership } = await supabase
+      .from("group_members")
+      .select("group_id, joined_at")
+      .eq("user_id", user.id)
+      .order("joined_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  if (!game) {
-    return ok({
-      ...empty,
-      group: { name: group.name, inviteCode: group.invite_code },
-    });
+    if (!membership) return ok(empty);
+
+    const { data: group, error: gErr } = await supabase
+      .from("groups")
+      .select("id, name, invite_code")
+      .eq("id", membership.group_id)
+      .maybeSingle();
+    if (gErr) return fromPostgrestError(gErr as PostgrestError);
+    if (!group) return ok(empty);
+
+    groupForResults = { name: group.name, inviteCode: group.invite_code };
+
+    const { data: latestGame, error: gameErr } = await supabase
+      .from("games")
+      .select("id, status, current_round, max_rounds, group_id")
+      .eq("group_id", group.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (gameErr) return fromPostgrestError(gameErr as PostgrestError);
+
+    if (!latestGame) {
+      return ok({
+        ...empty,
+        group: groupForResults,
+      });
+    }
+
+    gameForResults = latestGame as ResultsGameRow;
   }
+
+  if (!gameForResults || !groupForResults) return ok(empty);
 
   type GameMemberRpcRowResults = { user_id: string; email: string; display_name: string | null };
   const { data: emailRowsResults, error: emailErrResults } = await supabase.rpc(
     "get_game_member_emails",
-    { p_game_id: game.id }
+    { p_game_id: gameForResults.id }
   );
   if (emailErrResults) return fromPostgrestError(emailErrResults as PostgrestError);
 
@@ -369,7 +405,7 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
   const { data: rosterRows, error: rosterErr } = await supabase
     .from("game_members")
     .select("user_id, player_order")
-    .eq("game_id", game.id);
+    .eq("game_id", gameForResults.id);
   if (rosterErr) return fromPostgrestError(rosterErr as PostgrestError);
 
   const roster: GameResultsRosterRow[] = (rosterRows ?? [])
@@ -388,7 +424,7 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
   const { data: roundRows, error: roundsErr } = await supabase
     .from("rounds")
     .select("id, round_number, album_name, artist_name, album_url, created_by")
-    .eq("game_id", game.id)
+    .eq("game_id", gameForResults.id)
     .eq("status", "revealed")
     .order("round_number", { ascending: true });
   if (roundsErr) return fromPostgrestError(roundsErr as PostgrestError);
@@ -441,12 +477,12 @@ export async function getGameResults(): Promise<ActionResult<GameResultsData>> {
     viewerId: user.id,
     email: user.email ?? user.id,
     viewerDisplayName,
-    group: { name: group.name, inviteCode: group.invite_code },
+    group: groupForResults,
     game: {
-      id: game.id,
-      status: game.status,
-      currentRound: game.current_round,
-      maxRounds: game.max_rounds,
+      id: gameForResults.id,
+      status: gameForResults.status,
+      currentRound: gameForResults.current_round,
+      maxRounds: gameForResults.max_rounds,
     },
     roster,
     rounds,

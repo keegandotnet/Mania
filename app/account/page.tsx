@@ -298,14 +298,24 @@ export default async function AccountPage() {
                           {formatDate(game.createdAt)}
                         </p>
                       </div>
-                      <span
-                        className={cx(
-                          "w-fit rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.16em]",
-                          statusToneClass(game.status)
-                        )}
-                      >
-                        {statusLabel(game.status)}
-                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {game.status !== "pending" ? (
+                          <Link
+                            href={`/results?game=${game.gameId}`}
+                            className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-surface-raised"
+                          >
+                            View results
+                          </Link>
+                        ) : null}
+                        <span
+                          className={cx(
+                            "w-fit rounded-full px-3 py-1 text-xs font-medium uppercase tracking-[0.16em]",
+                            statusToneClass(game.status)
+                          )}
+                        >
+                          {statusLabel(game.status)}
+                        </span>
+                      </div>
                     </div>
                   </li>
                 );
