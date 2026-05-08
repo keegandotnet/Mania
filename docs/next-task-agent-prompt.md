@@ -1,46 +1,62 @@
-# Agent task: Group management on /account (retention v2)
+# Agent task: Share-friendly Results summary foundation
 
 Per [`.cursor/rules/NEXT-AGENT-TASK.mdc`](../.cursor/rules/NEXT-AGENT-TASK.mdc): when you complete a task, post the **next-agent copy-paste prompt** and a **3–5 word title** for the work you just did **in the agent chat**, not in this file. Update this document only with the **substantive task** the next agent should execute after open work is finished.
 
 ---
 
-## Context (2026-04-14)
+## Context (2026-05-06)
 
-`/account` now shows a "Your games" history list (last 20 games, ordered newest first, with group name, status badge, and round progress). The `getMyGameHistory` server action is live and documented in `docs/api.md`. `scripts/rls-smoke.mjs` now asserts `get_game_member_emails` and `get_group_member_profiles` shape and ordering.
-
-The **next retention gap**: users cannot see which groups they belong to, switch between groups, or leave a group from within the UI. `leaveGroup` already exists in `app/actions/mania.ts`; `getMyGameState` returns only the _most recently joined_ group. There is no `getMyGroups` action yet.
+- Phase 2 UI overhaul is complete: `/`, SiteHeader, `/play`, `/account`, `/results`, `/login`, and `/signup` are all on the shared design tokens in `app/globals.css` and `docs/design.md`.
+- `/results` now supports historical games via `getGameResults(gameId?: string)` and `/results?game=<uuid>`. `/account` links active/completed games to those scoped result pages.
+- `GameResultsData` already contains everything needed to build a text summary: group name, game status/current round/max rounds, roster with display names, revealed rounds, album/artist/url, picker, ratings, and review text.
+- Roadmap Phase 4 includes "Export / share-friendly results summary (per round or per game)." The user chose this as the next vertical and asked to prioritize reusable foundation over maximum UI scope.
 
 ---
 
 ## Goal (one vertical)
 
-Ship **group management on `/account`**: a "Your groups" section that lists every group the signed-in user belongs to (name, invite code, joined date), with a **Leave** button for each group they can leave (i.e. all groups). Wire it with a **new `getMyGroups` server action** that returns all `group_members` rows for the caller, joined with `groups` (name, invite code).
+Ship a **share-friendly text summary** on `/results` with a reusable formatter foundation:
 
-### Implementation notes (non-prescriptive)
+1. Add a pure, tested formatter (suggested: `lib/mania/resultsSummary.ts`) that accepts `GameResultsData` and returns a deterministic plain-text summary suitable for pasting into chat.
+2. Render a small "Share summary" card/control on `/results` when there is at least one revealed round. The control should copy the formatter output to the clipboard and show immediate success/error feedback.
+3. Keep the first UI slice narrow: text copy only. Do not add public share URLs, images, PDFs, Open Graph cards, or unauthenticated result pages.
+4. Document the summary format and reusable helper/API in `docs/api.md` (or a short docs section if the implementation stays in `lib/` rather than a server action).
 
-- `getMyGroups()` — plain `SELECT` on `group_members` joined to `groups` (RLS already scopes to caller's rows); no new RPC needed.
-- The Leave button should call the existing `leaveGroup(groupId)` server action. After leaving, revalidate or redirect so the list updates.
-- Clarify in UI copy that leaving a group does **not** remove game history (game membership is snapshotted in `game_members`).
-- Invite code display: show inline (copyable text or a small copy-to-clipboard button) so players can share without navigating to `/play`.
-- **No new tables or migrations** required.
-- Update **`docs/api.md`** for `getMyGroups`; update **`docs/testing.md`** manual checklist with the new group management scenarios.
-- **`npm run lint` && `npm run build`** must pass.
+The formatter is the foundation. Keep it independent of React and browser APIs so future work can reuse it for server-rendered exports, public links, or native sharing.
+
+---
+
+## Files likely touched
+
+- `lib/mania/resultsSummary.ts` (new pure formatter)
+- `lib/mania/resultsSummary.test.ts` or the repo's closest existing test pattern, if test infra exists
+- `app/results/ResultsView.tsx`
+- `app/components/CopyResultsSummaryButton.tsx` (new client component) or a local client component under `app/results/`
+- `docs/api.md`
+- `docs/roadmap.md` (mark the Phase 4 share-summary item as started/done if appropriate)
+
+---
 
 ## Done criteria
 
-- [ ] `/account` shows a **"Your groups"** section listing all groups the user belongs to with name, invite code, joined date, and a Leave button.
-- [ ] Leaving a group removes the row and updates the list without a full page reload (or redirects cleanly).
-- [ ] `getMyGroups` documented in **`docs/api.md`**.
-- [ ] Manual checklist entry added to **`docs/testing.md`**.
-- [ ] Lint and build green.
+- [ ] `buildResultsShareSummary(data)` (or similarly named helper) is pure, exported, and does not import React, Next.js, Supabase, or browser APIs.
+- [ ] Summary output includes group name, game completion/current-round context, per-round album/artist, picker, average score, reviewer scores, and written reviews when present.
+- [ ] Output is deterministic and readable in plain text. Prefer stable labels and roster display names via existing `memberLabel` behavior.
+- [ ] `/results` shows a token-styled "Share summary" control only when a summary can be meaningful (at least one revealed round).
+- [ ] Copy interaction handles success and clipboard failure states without breaking SSR.
+- [ ] Historical result pages (`/results?game=<uuid>`) copy the scoped game's summary, not the default latest game.
+- [ ] Default `/results` behavior remains unchanged except for the new share control.
+- [ ] `docs/api.md` updated with the helper/action contract and example output.
+- [ ] `npm run lint` and `npm run build` pass.
 
 ## Decisions already made (for future agents)
 
-- **Spotify integration** (Phase 3 on roadmap): must use a **server-side proxy** — client ID/secret stay server-only, never in the browser bundle or client requests.
-- **UI overhaul** (Phase 2 on roadmap): ships before Spotify; focus on typography, spacing, color system, and mobile-responsive polish across Play, Results, and Account.
+- **Spotify integration** (Phase 3): server-side proxy only — secrets never in the browser.
+- **Share summary scope:** plain-text clipboard export first; no public URLs or image/PDF export in this vertical.
+- **Design system:** keep using `rounded-lg border border-border bg-surface p-5 shadow-sm`, semantic text tokens, and primary/secondary button patterns from `docs/design.md`.
 
 ## Risks
 
-- **Leave last group:** leaving the only group is allowed (no product constraint against it yet), but the UI should make the consequence clear.
-- **Active game:** if a user leaves a group that has an active game, they remain in `game_members` (snapshot). Copy should reflect this nuance if feasible.
-- **RLS on `groups`:** users who are no longer a group member lose SELECT access via RLS. Confirm the query is evaluated before the leave action, not after.
+- Very long written reviews can produce an unwieldy clipboard payload. Do not silently truncate in the foundation unless product copy makes that explicit; a future export format can add "compact" variants.
+- Clipboard access only exists in the browser and can fail on insecure contexts or permissions. Keep copy logic in a client component and show a graceful error.
+- Average-score formatting should match the Results UI (`x.x`) so users do not see conflicting numbers.
