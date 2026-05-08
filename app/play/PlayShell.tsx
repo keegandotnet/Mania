@@ -297,6 +297,7 @@ export function PlayShell({ initialState }: Props) {
   );
 
   const { group, game, round, hasReviewed, viewerId, revealedDetail } = state;
+  const groupRoster = state.groupRoster ?? [];
   const status = statusFor(state);
 
   function refresh(prevRoundStatus?: string) {
@@ -475,7 +476,7 @@ export function PlayShell({ initialState }: Props) {
         </section>
       ) : null}
 
-      {group && state.groupRoster && state.groupRoster.length > 0 ? (
+      {group && groupRoster.length > 0 ? (
         <section className={surfaceCardClass}>
           <div className="flex items-end justify-between gap-4">
             <div>
@@ -485,11 +486,11 @@ export function PlayShell({ initialState }: Props) {
               <h2 className="mt-2 text-xl font-semibold tracking-tight">Who is in the room</h2>
             </div>
             <p className="text-xs text-foreground-secondary">
-              {state.groupRoster.length} member{state.groupRoster.length === 1 ? "" : "s"}
+              {groupRoster.length} member{groupRoster.length === 1 ? "" : "s"}
             </p>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {state.groupRoster.map((member, index) => (
+            {groupRoster.map((member, index) => (
               <div
                 key={member.userId}
                 className="rounded-[24px] border border-border bg-surface-raised/70 p-4"
@@ -505,7 +506,7 @@ export function PlayShell({ initialState }: Props) {
                   ) : null}
                 </div>
                 <p className="mt-3 text-sm font-semibold text-foreground">
-                  {groupMemberLabel(viewerId, member.userId, state.groupRoster)}
+                  {groupMemberLabel(viewerId, member.userId, groupRoster)}
                 </p>
                 <p className="mt-1 break-all text-xs text-foreground-secondary">
                   {member.email}
