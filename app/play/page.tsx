@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { PageShell } from "@/app/components/ui";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { getMyGameState, type MyGameState } from "@/app/actions/mania";
+import { isSpotifySearchEnabled } from "@/app/actions/spotify";
 import { PlayShell } from "./PlayShell";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ export default async function PlayPage() {
   }
 
   const result = await getMyGameState();
+  const spotifyEnabled = await isSpotifySearchEnabled();
   const initialState: MyGameState = result.ok
     ? result.data
     : {
@@ -48,7 +50,7 @@ export default async function PlayPage() {
           </p>
         </header>
 
-        <PlayShell initialState={initialState} />
+        <PlayShell initialState={initialState} spotifyEnabled={spotifyEnabled} />
       </section>
     </PageShell>
   );

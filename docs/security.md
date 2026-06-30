@@ -2,7 +2,8 @@
 
 ## Secrets
 
-- Keep **only** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` for this milestone.
+- Keep **only** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `.env.local` for Supabase.
+- **Spotify catalog search** uses server-only env vars: `SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, and optional `SPOTIFY_MARKET` (defaults to `US`). Never expose the client secret or bearer tokens to the browser, committed files, or docs.
 - Do **not** paste keys into docs, tickets, or client-side bundles beyond the public anon key.
 - Service role keys belong in **server-only** env vars and are **not** used by current server actions; the app relies on the anon key plus the user JWT.
 
@@ -44,7 +45,7 @@ Each RPC uses `security definer` with `search_path = public`, revokes `PUBLIC`, 
 | `update_game_max_rounds` | Host-only; blocked after first round starts; enforces min = player count. |
 | `update_game_auto_advance` | Host-only auto-advance flag update. |
 | `start_next_round` | Caller must be host; locks and advances round state; errors if advancing would pass `max_rounds`. |
-| `submit_album` | Caller must be active round submitter; optional `album_url` must be blank / `NULL` or absolute `http://` / `https://`. |
+| `submit_album` | Caller must be active round submitter; optional `album_url` must be blank / `NULL` or absolute `http://` / `https://`; optional `spotify_album_id` and `album_cover_url` validated when present. |
 | `submit_review` | Caller must be non-submitter game member; rating bounds enforced. |
 | `get_game_member_emails` | Returns `(user_id, email, display_name)` for all game members; caller must be a game member. |
 | `get_group_member_profiles` | Returns group roster with emails, display names, join timestamps, and `player_order`; caller must be a group member. |

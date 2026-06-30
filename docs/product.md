@@ -9,7 +9,7 @@ After each round is revealed, players are automatically taken to the Results pag
 
 ## MVP Scope
 
-- Manual album entry (no streaming integration yet)
+- Manual album entry with optional Spotify-powered autocomplete and cover art
 - Async gameplay — players don't need to be online simultaneously
 - Private groups joined via 6-character invite code
 - Max 6 users per group
@@ -37,6 +37,6 @@ After each round is revealed, players are automatically taken to the Results pag
 
 ## Roadmap
 
-- Phase 2: Spotify integration for album search and cover art
+- Phase 3: Spotify catalog search for album autocomplete and cover art (server-side; no user login)
 - Phase 3: Analytics and history
 - Phase 4: Mobile app

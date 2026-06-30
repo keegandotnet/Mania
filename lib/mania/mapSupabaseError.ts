@@ -28,6 +28,8 @@ const RPC_MESSAGES: Record<string, string> = {
   no_round_awaiting_album: "No round is waiting for an album.",
   not_your_turn: "Only the assigned player can submit the album.",
   invalid_album_url: "Album link must be a valid absolute http:// or https:// URL.",
+  invalid_cover_url: "Cover art link must be a valid absolute https:// URL.",
+  invalid_spotify_album_id: "Spotify album id is invalid.",
   round_not_found: "Round not found.",
   round_not_reviewable: "This round is not accepting reviews.",
   cannot_self_review: "You cannot review your own album.",

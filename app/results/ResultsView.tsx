@@ -13,6 +13,7 @@ import type {
 } from "@/app/actions/mania";
 import { memberLabel } from "@/lib/mania/memberLabel";
 import { buildResultsShareSummary } from "@/lib/mania/resultsSummary";
+import { AlbumCoverArt } from "@/app/components/AlbumCoverArt";
 import { CopyResultsSummaryButton } from "./CopyResultsSummaryButton";
 
 type Props = { data: GameResultsData };
@@ -389,44 +390,52 @@ export function ResultsView({ data }: Props) {
                         )}
                       >
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                          <div className="max-w-2xl">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
-                                Round {round.roundNumber}
-                              </span>
-                              {isBest ? (
-                                <span className={toneBadgeClass("yellow")}>
-                                  Top pick
+                          <div className="flex min-w-0 flex-1 gap-4">
+                            <AlbumCoverArt
+                              albumName={round.albumName}
+                              artistName={round.artistName}
+                              coverUrl={round.albumCoverUrl}
+                              size="lg"
+                            />
+                            <div className="max-w-2xl">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
+                                  Round {round.roundNumber}
                                 </span>
+                                {isBest ? (
+                                  <span className={toneBadgeClass("yellow")}>
+                                    Top pick
+                                  </span>
+                                ) : null}
+                              </div>
+                              <h3 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">
+                                {round.albumName ?? "Album TBA"}
+                              </h3>
+                              {round.artistName ? (
+                                <p className="mt-1 text-sm text-foreground-secondary">
+                                  {round.artistName}
+                                </p>
                               ) : null}
-                            </div>
-                            <h3 className="mt-3 text-balance text-2xl font-black tracking-tight sm:text-3xl">
-                              {round.albumName ?? "Album TBA"}
-                            </h3>
-                            {round.artistName ? (
-                              <p className="mt-1 text-sm text-foreground-secondary">
-                                {round.artistName}
+                              <p className="mt-3 text-sm text-foreground-secondary">
+                                Picked by{" "}
+                                <span className="font-bold text-foreground">
+                                  {rosterLabel(viewerId, round.pickerId, roster)}
+                                </span>
+                                {round.albumUrl ? (
+                                  <>
+                                    {" "}
+                                    <a
+                                      href={round.albumUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="font-bold text-foreground underline-offset-4 hover:underline"
+                                    >
+                                      Listen
+                                    </a>
+                                  </>
+                                ) : null}
                               </p>
-                            ) : null}
-                            <p className="mt-3 text-sm text-foreground-secondary">
-                              Picked by{" "}
-                              <span className="font-bold text-foreground">
-                                {rosterLabel(viewerId, round.pickerId, roster)}
-                              </span>
-                              {round.albumUrl ? (
-                                <>
-                                  {" "}
-                                  <a
-                                    href={round.albumUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="font-bold text-foreground underline-offset-4 hover:underline"
-                                  >
-                                    Listen
-                                  </a>
-                                </>
-                              ) : null}
-                            </p>
+                            </div>
                           </div>
 
                           <div className="grid gap-3 sm:grid-cols-3 lg:w-[27rem] lg:grid-cols-1 xl:grid-cols-3">

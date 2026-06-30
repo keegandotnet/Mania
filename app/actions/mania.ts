@@ -52,6 +52,8 @@ export type MyGameState = {
     albumName: string | null;
     artistName: string | null;
     albumUrl: string | null;
+    spotifyAlbumId: string | null;
+    albumCoverUrl: string | null;
     isPicker: boolean;
   } | null;
   hasReviewed: boolean;
@@ -76,6 +78,8 @@ export type GameResultsRound = {
   albumName: string | null;
   artistName: string | null;
   albumUrl: string | null;
+  spotifyAlbumId: string | null;
+  albumCoverUrl: string | null;
   pickerId: string;
   reviews: { userId: string; rating: number; reviewText: string }[];
 };
@@ -213,7 +217,9 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
 
   const { data: round, error: roundErr } = await supabase
     .from("rounds")
-    .select("id, round_number, status, album_name, artist_name, album_url, created_by")
+    .select(
+      "id, round_number, status, album_name, artist_name, album_url, spotify_album_id, album_cover_url, created_by"
+    )
     .eq("game_id", game.id)
     .order("round_number", { ascending: false })
     .limit(1)
@@ -221,6 +227,9 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
   if (roundErr) return fromPostgrestError(roundErr as PostgrestError);
 
   const normalizedCurrentRoundUrl = normalizeOptionalHttpUrl(round?.album_url ?? null);
+  const normalizedCurrentRoundCoverUrl = normalizeOptionalHttpUrl(
+    round?.album_cover_url ?? null
+  );
 
   let hasReviewed = false;
   if (round?.status === "awaiting_reviews") {
@@ -285,6 +294,12 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
           albumName: round.album_name,
           artistName: round.artist_name,
           albumUrl: normalizedCurrentRoundUrl.ok ? normalizedCurrentRoundUrl.value : null,
+          spotifyAlbumId: (round.spotify_album_id as string | null) ?? null,
+          albumCoverUrl:
+            normalizedCurrentRoundCoverUrl.ok &&
+            normalizedCurrentRoundCoverUrl.value?.startsWith("https://")
+              ? normalizedCurrentRoundCoverUrl.value
+              : null,
           isPicker: round.created_by === user.id,
         }
       : null,
@@ -423,7 +438,9 @@ export async function getGameResults(gameId?: string): Promise<ActionResult<Game
 
   const { data: roundRows, error: roundsErr } = await supabase
     .from("rounds")
-    .select("id, round_number, album_name, artist_name, album_url, created_by")
+    .select(
+      "id, round_number, album_name, artist_name, album_url, spotify_album_id, album_cover_url, created_by"
+    )
     .eq("game_id", gameForResults.id)
     .eq("status", "revealed")
     .order("round_number", { ascending: true });
@@ -462,12 +479,20 @@ export async function getGameResults(gameId?: string): Promise<ActionResult<Game
 
   const rounds: GameResultsRound[] = roundsList.map((row) => {
     const normalizedAlbumUrl = normalizeOptionalHttpUrl((row.album_url as string | null) ?? null);
+    const normalizedCoverUrl = normalizeOptionalHttpUrl(
+      (row.album_cover_url as string | null) ?? null
+    );
     return {
       id: row.id as string,
       roundNumber: row.round_number as number,
       albumName: row.album_name as string | null,
       artistName: row.artist_name as string | null,
       albumUrl: normalizedAlbumUrl.ok ? normalizedAlbumUrl.value : null,
+      spotifyAlbumId: (row.spotify_album_id as string | null) ?? null,
+      albumCoverUrl:
+        normalizedCoverUrl.ok && normalizedCoverUrl.value?.startsWith("https://")
+          ? normalizedCoverUrl.value
+          : null,
       pickerId: row.created_by as string,
       reviews: reviewsByRound.get(row.id as string) ?? [],
     };
@@ -657,7 +682,9 @@ export async function submitAlbum(
   gameId: string,
   albumName: string,
   artistName: string,
-  albumUrl: string
+  albumUrl: string,
+  spotifyAlbumId?: string | null,
+  albumCoverUrl?: string | null
 ): Promise<ActionResult<{ roundId: string }>> {
   const supabase = await createSupabaseServerClient();
   const {
@@ -673,11 +700,32 @@ export async function submitAlbum(
     return actionErr("invalid_album_url", normalizedAlbumUrl.message);
   }
 
+  const trimmedSpotifyId = spotifyAlbumId?.trim() ?? "";
+  if (trimmedSpotifyId && !/^[A-Za-z0-9]{10,64}$/.test(trimmedSpotifyId)) {
+    return actionErr("invalid_input", "Spotify album id is invalid.");
+  }
+
+  const normalizedCoverUrl = normalizeOptionalHttpUrl(albumCoverUrl ?? null);
+  if (!normalizedCoverUrl.ok) {
+    return actionErr("invalid_cover_url", normalizedCoverUrl.message);
+  }
+  if (
+    normalizedCoverUrl.value &&
+    !normalizedCoverUrl.value.startsWith("https://")
+  ) {
+    return actionErr(
+      "invalid_cover_url",
+      "Cover art link must be a valid absolute https:// URL."
+    );
+  }
+
   const { data, error } = await supabase.rpc("submit_album", {
     p_game_id: gameId,
     p_album_name: albumName,
     p_artist_name: artistName,
     p_album_url: normalizedAlbumUrl.value ?? "",
+    p_spotify_album_id: trimmedSpotifyId || null,
+    p_album_cover_url: normalizedCoverUrl.value ?? null,
   });
 
   if (error) return fromPostgrestError(error);
