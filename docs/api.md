@@ -24,7 +24,7 @@ Unless noted, actions require a signed-in user; otherwise they return `unauthori
 | `viewerDisplayName` | `string \| null` | `profiles.display_name` for the viewer; UI falls back to `email` when null/empty. |
 | `group` | `{ id, name, inviteCode } \| null` | Caller's **most recently joined** group (by `group_members.joined_at` desc). `null` if not in any group. |
 | `game` | object \| `null` | Latest game for that group (`games.created_at` desc). `null` if no game. When present: `id`, `status`, `currentRound`, `isHost` (caller is `games.host_id`), `maxRounds`, `autoAdvance`, `playerCount` (number of `game_members` rows). |
-| `round` | object \| `null` | Latest round for that game (`round_number` desc). `null` if no round row. When present: `id`, `roundNumber`, `status` (`awaiting_album` \| `awaiting_reviews` \| `revealed`), `albumName`, `artistName`, `albumUrl`, `isPicker` (caller is `rounds.created_by`). |
+| `round` | object \| `null` | Latest round for that game (`round_number` desc). `null` if no round row. When present: `id`, `roundNumber`, `status` (`awaiting_album` \| `awaiting_reviews` \| `revealed`), `albumName`, `artistName`, `albumUrl`, `spotifyAlbumId`, `albumCoverUrl`, `isPicker` (caller is `rounds.created_by`). |
 | `hasReviewed` | `boolean` | If current `round.status === "awaiting_reviews"`, whether the caller already has a `reviews` row for that round; otherwise `false`. |
 | `revealedDetail` | `MyGameRevealedDetail \| null` | When the latest round is `revealed`: roster (emails + display names), reviews, picker, and round number for **on-`/play` results**. Otherwise `null`. |
 | `groupRoster` | `GroupRosterRow[] \| null` | Members of the current group with join order (`null` when not in a group). |
@@ -64,6 +64,7 @@ Without `gameId`, resolves **the same "my latest group" + "latest game in that g
 | `id` | `string` |
 | `roundNumber` | `number` |
 | `albumName`, `artistName`, `albumUrl` | `string \| null` |
+| `spotifyAlbumId`, `albumCoverUrl` | `string \| null` — set when the picker chose a Spotify suggestion; cover URL is absolute `https://` when present. |
 | `pickerId` | `string` (`rounds.created_by`) |
 | `reviews` | `{ userId, rating, reviewText }[]` — all reviews for that round the caller can see (`reviewText` may be `""`). |
 
@@ -200,17 +201,36 @@ Reviews:
 - **Returns:** `{ roundId: string }` on success.
 - **Backend:** RPC `start_next_round` (reveals current round if `awaiting_reviews`, then creates next round).
 
-### `submitAlbum(gameId, albumName, artistName, albumUrl)`
+### `submitAlbum(gameId, albumName, artistName, albumUrl, spotifyAlbumId?, albumCoverUrl?)`
 
 - **Returns:** `{ roundId: string }` on success.
-- **Validation:** trimmed album and artist names required; else `invalid_input`. `albumUrl` is optional, but when present it must be a valid absolute `http://` or `https://` URL; otherwise `invalid_album_url`.
-- **Backend:** RPC `submit_album` (DB also rejects unsafe / malformed `album_url` values).
+- **Validation:** trimmed album and artist names required; else `invalid_input`. `albumUrl` is optional, but when present it must be a valid absolute `http://` or `https://` URL; otherwise `invalid_album_url`. Optional `spotifyAlbumId` must match `[A-Za-z0-9]{10,64}` when provided. Optional `albumCoverUrl` must be a valid absolute `https://` URL when provided; otherwise `invalid_cover_url`.
+- **Backend:** RPC `submit_album` (DB also rejects unsafe / malformed `album_url` and `album_cover_url` values).
 
 ### `submitReview(roundId: string, rating: number, reviewText: string)`
 
 - **Returns:** `{ revealed: boolean }` on success — `true` if the round's status is `revealed` after the RPC (e.g. last review triggered reveal).
 - **Validation:** `rating` must be finite; else `invalid_rating`.
 - **Backend:** RPC `submit_review`; then a follow-up `SELECT` on `rounds.status` for the returned `revealed` flag.
+
+---
+
+## Spotify catalog search (`app/actions/spotify.ts`)
+
+Server-only Spotify Client Credentials integration. Credentials (`SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`, optional `SPOTIFY_MARKET`) are read from env on the server; bearer tokens never reach the browser.
+
+### `isSpotifySearchEnabled()`
+
+- **Returns:** `boolean` — `true` when both Spotify client id and secret are configured.
+- **Used by:** `/play` page to pass `spotifyEnabled` into the picker autocomplete UI.
+
+### `searchSpotifyAlbums(query: string)`
+
+- **Returns:** `ActionResult<SpotifySearchResult>` where success `data` is either:
+  - `{ ok: true, suggestions: SpotifyAlbumSuggestion[] }` — up to 8 album matches with `spotifyAlbumId`, `albumName`, `artistName`, `releaseYear`, `coverUrl`, `spotifyUrl`.
+  - `{ ok: false, reason: "unconfigured" | "invalid_query" | "rate_limited" | "unavailable" }`.
+- **Validation:** query trimmed length 2–100; shorter/longer queries return `{ ok: false, reason: "invalid_query" }` without calling Spotify.
+- **Auth:** requires signed-in user; else `unauthorized`.
 
 ---
 

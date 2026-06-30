@@ -17,5 +17,6 @@ The product doc [schema.md](./schema.md) describes the conceptual model. The **d
 - **`mania_start_next_round_impl`** — Shared core used by `start_next_round` (host) and by `submit_review` for auto-advance; not granted to `authenticated` directly.
 - **`update_game_max_rounds`** — Host-only; cannot lower below `current_round` or change after `status = 'completed'` (`20250401123000_update_game_max_rounds.sql`).
 - **`update_game_auto_advance`** — Host-only; toggles `auto_advance`; blocked when `status = 'completed'` (`20250402120000_update_game_auto_advance.sql`).
+- **`rounds.spotify_album_id` / `rounds.album_cover_url`** — Optional Spotify catalog metadata persisted when a picker selects a Spotify suggestion (`20260424120000_spotify_album_metadata.sql`). `album_url` remains the listen link (Spotify or any valid http(s) URL). Cover URLs must be absolute `https://` when stored.
 
 Application code and [state-machine.md](./state-machine.md) are authoritative for runtime behavior.

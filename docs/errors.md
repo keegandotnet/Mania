@@ -39,6 +39,8 @@ Actions return a discriminated result `{ ok: true, ... } | { ok: false, code, me
 | `round_wrong_status`      | Album submitted when round not `awaiting_album`, etc. |
 | `duplicate_album`         | Unique index on normalized album per game violated. |
 | `invalid_album_url`       | Album link is present but not a valid absolute `http://` / `https://` URL. |
+| `invalid_cover_url`       | Cover art link is present but not a valid absolute `https://` URL. |
+| `invalid_spotify_album_id`| Spotify album id failed DB validation. |
 
 ## Reviews
 

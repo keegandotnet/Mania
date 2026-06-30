@@ -12,7 +12,7 @@ games(id, group_id, host_id, status, current_round, max_rounds, auto_advance, cr
 
 game_members(id, game_id, user_id, player_order)
 
-rounds(id, game_id, created_by, album_name, artist_name, album_url, round_number, status, created_at)
+rounds(id, game_id, created_by, album_name, artist_name, album_url, spotify_album_id, album_cover_url, round_number, status, created_at)
 
 reviews(id, round_id, user_id, rating, review_text, created_at)
 ```

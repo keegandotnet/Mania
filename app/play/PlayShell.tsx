@@ -32,8 +32,10 @@ import {
 } from "@/app/actions/mania";
 import { memberLabel } from "@/lib/mania/memberLabel";
 import { normalizeOptionalHttpUrl } from "@/lib/mania/url";
+import { AlbumCoverArt } from "@/app/components/AlbumCoverArt";
+import { AlbumAutocomplete } from "./AlbumAutocomplete";
 
-type Props = { initialState: MyGameState };
+type Props = { initialState: MyGameState; spotifyEnabled: boolean };
 type FeedbackState = { kind: "error" | "ok"; message: string } | null;
 
 const stickerCardClass =
@@ -241,7 +243,7 @@ function Feedback({ fb }: { fb: FeedbackState }) {
   );
 }
 
-export function PlayShell({ initialState }: Props) {
+export function PlayShell({ initialState, spotifyEnabled }: Props) {
   const router = useRouter();
   const [state, setState] = useState(initialState);
   const [pending, startTransition] = useTransition();
@@ -261,6 +263,8 @@ export function PlayShell({ initialState }: Props) {
   const [albumName, setAlbumName] = useState("");
   const [artistName, setArtistName] = useState("");
   const [albumUrl, setAlbumUrl] = useState("");
+  const [spotifyAlbumId, setSpotifyAlbumId] = useState<string | null>(null);
+  const [albumCoverUrl, setAlbumCoverUrl] = useState<string | null>(null);
   const [rating, setRating] = useState("8");
   const [reviewText, setReviewText] = useState("");
   const [maxRoundsDraft, setMaxRoundsDraft] = useState(
@@ -480,40 +484,48 @@ export function PlayShell({ initialState }: Props) {
       round?.status === "revealed" ? (
         <section className={cx(toneCardClass("yellow"), "p-6 sm:p-7")}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-yellow-fg">
-                Round {revealedDetail.roundNumber} revealed
-              </p>
-              <h2 className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl">
-                {round.albumName}
-              </h2>
-              <p className="mt-2 text-sm text-foreground-secondary">
-                {round.artistName}
-                {round.albumUrl ? (
-                  <>
-                    {" "}
-                    <a
-                      href={round.albumUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-bold text-foreground underline-offset-4 hover:underline"
-                    >
-                      Open link
-                    </a>
-                  </>
-                ) : null}
-              </p>
-              <p className="mt-3 max-w-prose text-sm leading-7 text-foreground/85">
-                Picked by{" "}
-                <span className="font-bold text-foreground">
-                  {memberLabel(
-                    viewerId,
-                    revealedDetail.pickerId,
-                    revealedDetail.roster
-                  )}
-                </span>
-                . Every score and note from the room is open now.
-              </p>
+            <div className="flex min-w-0 flex-1 gap-4">
+              <AlbumCoverArt
+                albumName={round.albumName}
+                artistName={round.artistName}
+                coverUrl={round.albumCoverUrl}
+                size="lg"
+              />
+              <div className="max-w-2xl">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-yellow-fg">
+                  Round {revealedDetail.roundNumber} revealed
+                </p>
+                <h2 className="mt-2 text-balance text-2xl font-black tracking-tight sm:text-3xl">
+                  {round.albumName}
+                </h2>
+                <p className="mt-2 text-sm text-foreground-secondary">
+                  {round.artistName}
+                  {round.albumUrl ? (
+                    <>
+                      {" "}
+                      <a
+                        href={round.albumUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-bold text-foreground underline-offset-4 hover:underline"
+                      >
+                        Open link
+                      </a>
+                    </>
+                  ) : null}
+                </p>
+                <p className="mt-3 max-w-prose text-sm leading-7 text-foreground/85">
+                  Picked by{" "}
+                  <span className="font-bold text-foreground">
+                    {memberLabel(
+                      viewerId,
+                      revealedDetail.pickerId,
+                      revealedDetail.roster
+                    )}
+                  </span>
+                  . Every score and note from the room is open now.
+                </p>
+              </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3 lg:w-[26rem] lg:grid-cols-1 xl:grid-cols-3">
@@ -801,31 +813,22 @@ export function PlayShell({ initialState }: Props) {
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            <label className="flex flex-col gap-2 text-sm font-bold">
-              <span className="text-foreground">Album</span>
-              <input
-                value={albumName}
-                onChange={(event) => setAlbumName(event.target.value)}
-                className={inputClass}
-              />
-            </label>
-            <label className="flex flex-col gap-2 text-sm font-bold">
-              <span className="text-foreground">Artist</span>
-              <input
-                value={artistName}
-                onChange={(event) => setArtistName(event.target.value)}
-                className={inputClass}
-              />
-            </label>
-            <label className="sm:col-span-2 flex flex-col gap-2 text-sm font-bold">
-              <span className="text-foreground">Album URL (optional)</span>
-              <input
-                value={albumUrl}
-                onChange={(event) => setAlbumUrl(event.target.value)}
-                className={inputClass}
-                placeholder="https://..."
-              />
-            </label>
+            <AlbumAutocomplete
+              albumName={albumName}
+              artistName={artistName}
+              albumUrl={albumUrl}
+              spotifyAlbumId={spotifyAlbumId}
+              albumCoverUrl={albumCoverUrl}
+              spotifyEnabled={spotifyEnabled}
+              disabled={pending}
+              onAlbumNameChange={setAlbumName}
+              onArtistNameChange={setArtistName}
+              onAlbumUrlChange={setAlbumUrl}
+              onSpotifyMetadataChange={({ spotifyAlbumId: nextId, albumCoverUrl: nextCover }) => {
+                setSpotifyAlbumId(nextId);
+                setAlbumCoverUrl(nextCover);
+              }}
+            />
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
@@ -848,7 +851,9 @@ export function PlayShell({ initialState }: Props) {
                     gameId,
                     albumName,
                     artistName,
-                    normalizedAlbumUrl.value ?? ""
+                    normalizedAlbumUrl.value ?? "",
+                    spotifyAlbumId,
+                    albumCoverUrl
                   );
                   if (!result.ok) {
                     setAlbumFb({ kind: "error", message: result.message });
@@ -861,6 +866,8 @@ export function PlayShell({ initialState }: Props) {
                   setAlbumName("");
                   setArtistName("");
                   setAlbumUrl("");
+                  setSpotifyAlbumId(null);
+                  setAlbumCoverUrl(null);
                   refresh();
                 });
               }}
@@ -914,29 +921,37 @@ export function PlayShell({ initialState }: Props) {
           {round?.albumName ? (
             <div className="mt-5 rounded-2xl border-2 border-foreground bg-accent-yellow/30 p-5 landing-sticker-sm">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="max-w-2xl">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-yellow-fg">
-                    Current album
-                  </p>
-                  <p className="mt-2 text-xl font-black tracking-tight text-foreground">
-                    {round.albumName}
-                  </p>
-                  <p className="mt-1 text-sm text-foreground-secondary">
-                    {round.artistName}
-                    {round.albumUrl ? (
-                      <>
-                        {" "}
-                        <a
-                          href={round.albumUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-bold text-foreground underline-offset-4 hover:underline"
-                        >
-                          Open link
-                        </a>
-                      </>
-                    ) : null}
-                  </p>
+                <div className="flex min-w-0 flex-1 gap-4">
+                  <AlbumCoverArt
+                    albumName={round.albumName}
+                    artistName={round.artistName}
+                    coverUrl={round.albumCoverUrl}
+                    size="md"
+                  />
+                  <div className="max-w-2xl">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-yellow-fg">
+                      Current album
+                    </p>
+                    <p className="mt-2 text-xl font-black tracking-tight text-foreground">
+                      {round.albumName}
+                    </p>
+                    <p className="mt-1 text-sm text-foreground-secondary">
+                      {round.artistName}
+                      {round.albumUrl ? (
+                        <>
+                          {" "}
+                          <a
+                            href={round.albumUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold text-foreground underline-offset-4 hover:underline"
+                          >
+                            Open link
+                          </a>
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
                 </div>
                 <div className="grid gap-2 text-xs">
                   <span className="inline-flex items-center rounded-full border-2 border-foreground/15 bg-surface px-3 py-1 font-bold text-foreground-secondary">

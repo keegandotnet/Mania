@@ -37,6 +37,9 @@ Scenarios that must stay green as the codebase grows:
 - [ ] **Multiline reviews:** submit a review with **newlines**; confirm they **persist** and **render** on Play and Results (`whitespace-pre-wrap` / wrapping as implemented).
 - [ ] **Long review text:** no **horizontal** layout breakage or overflow in typical viewports on Play and Results.
 - [ ] **Album link validation:** submitting an album with an unsafe or malformed link (for example `javascript:alert(1)` or `notaurl`) is rejected with a clear validation message; valid absolute `http://` / `https://` links still save and open normally.
+- [ ] **Spotify autocomplete (when configured):** on `/play` as the picker, typing in the album field shows debounced Spotify album suggestions with cover thumbnails; selecting one fills album, artist, listen URL, and preview cover art; submission persists cover art on the round.
+- [ ] **Spotify fallback:** with Spotify env vars unset or search unavailable, manual album/artist/URL entry still works without errors.
+- [ ] **Cover art rendering:** `/play` (review + revealed cards) and `/results` round archive show persisted cover art when available; manual entries show initials fallback.
 - [ ] **Host round control panel visibility:** hidden while round is `awaiting_album` or `awaiting_reviews`; visible when no round exists or round is `revealed`.
 - [ ] **Round limit locked:** round limit input and Save button are absent once `currentRound > 0`; a read-only display shows the locked value.
 - [ ] **Min rounds = player count:** round limit input has `min={playerCount}`; saving a value below player count shows an error.

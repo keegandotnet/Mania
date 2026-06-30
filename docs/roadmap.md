@@ -39,8 +39,10 @@ A public-facing `/` that explains what Mania is, with clear CTAs (sign up / sign
 
 ## Phase 3 — Spotify integration
 
-- Album search + cover art via Spotify API (server-side proxy; client ID/secret never exposed to browser)
-- Automatic album metadata fill on pick submission
+- ✅ Server-side Spotify Client Credentials catalog search (no user OAuth)
+- ✅ Album autocomplete on `/play` picker form with debounced suggestions
+- ✅ Persisted cover art + Spotify album id on rounds; rendered on `/play` and `/results`
+- ✅ Manual album entry fallback when Spotify is unconfigured or unavailable
 
 ## Phase 4 — Analytics
 
