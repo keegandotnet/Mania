@@ -44,6 +44,10 @@ A public-facing `/` that explains what Mania is, with clear CTAs (sign up / sign
 - ✅ Persisted cover art + Spotify album id on rounds; rendered on `/play` and `/results`
 - ✅ Manual album entry fallback when Spotify is unconfigured or unavailable
 
+## Phase 3.5 — Auth/session polish
+
+- Next: auth-aware navigation and entry CTAs so logged-in users do not see inappropriate Log In / Sign Up prompts, while signed-out users keep clear onboarding paths.
+
 ## Phase 4 — Analytics
 
 - All-time stats per group (average scores, top pickers, etc.)

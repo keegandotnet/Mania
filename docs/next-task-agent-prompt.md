@@ -1,85 +1,69 @@
-# Agent task: Spotify album autocomplete + cover art
+# Agent task: Auth-aware navigation and entry CTA polish
 
 Per [`.cursor/rules/NEXT-AGENT-TASK.mdc`](../.cursor/rules/NEXT-AGENT-TASK.mdc): when you complete a task, post the **next-agent copy-paste prompt** and a **3–5 word title** for the work you just did **in the agent chat**, not in this file. Update this document only with the **substantive task** the next agent should execute after open work is finished.
 
 ---
 
-## Context (2026-06-29)
+## Context (2026-06-30)
 
-- Core gameplay is usable and Phase 1 now includes a share-friendly Results summary foundation on `/results`.
-- Phase 2 sticker UI and the gamey mobile landing-page refresh are complete in code and marked complete in `docs/roadmap.md`.
-- The next product vertical is Spotify catalog search for the album picker. This is **not** "Login with Spotify"; Mania only needs app-level Spotify Web API access to search albums/tracks and autofill album metadata.
-- The user will add Spotify credentials locally before starting implementation:
-  - `SPOTIFY_CLIENT_ID`
-  - `SPOTIFY_CLIENT_SECRET`
-  - optional `SPOTIFY_MARKET` (default to `US` if unset)
-- Keep Spotify credentials and access tokens server-only. Do not expose the client secret, bearer tokens, or raw credential values in committed docs, browser code, or logs.
-- The user prefers a cleaner MVP with persisted cover art, so this task may include database/backend changes.
+- Core gameplay, sticker UI, results sharing, account/group management, and Spotify album autocomplete with persisted cover art are implemented.
+- During Spotify QA, the user noticed that **Log In / Sign Up** entry points still appear on some pages even after a user is authenticated.
+- This is a polish vertical: improve auth-aware navigation and entry CTAs across public/authenticated routes without changing auth providers or adding new account features.
+- Preserve the existing sticker visual system and safe redirect behavior.
 
 ---
 
 ## Goal (one vertical)
 
-Ship Spotify-backed album suggestions in the album submission flow, with selected metadata persisted and rendered across the game:
+Make the app navigation and auth entry points accurately reflect signed-in vs signed-out state:
 
-1. Add a server-only Spotify catalog client using Client Credentials.
-2. Add a narrow Mania search API/server action that returns normalized album suggestions for a user query.
-3. Update the album selection UI on `/play` so the album/artist input can suggest albums as the user types.
-4. When a user selects a suggestion, autofill album title, artist, Spotify URL, and cover art.
-5. Persist enough Spotify metadata to show cover art consistently in `/play` and `/results`.
-6. Preserve manual entry as a fallback when credentials are missing, Spotify is unavailable, or a desired album is not found.
-7. Update docs and tests for the new API/schema/UI behavior.
+1. Audit `SiteHeader`, landing page, login page, signup page, account page, play page, and results page for authenticated users seeing inappropriate Log In / Sign Up CTAs.
+2. When signed in, replace public auth CTAs with useful in-app destinations such as Play, Results, Account, or Sign out (following existing product patterns).
+3. When signed out, preserve clear Log In / Sign Up CTAs and safe `next` redirect behavior.
+4. If a signed-in user visits `/login` or `/signup`, show a signed-in state with navigation back into the app or redirect intentionally if that matches existing route conventions.
+5. Keep UI accessible, mobile-friendly, and aligned with `app/components/ui.tsx` primitives.
+6. Update docs/testing/roadmap for auth-aware navigation expectations.
 
-This is a **product vertical** with backend support. Do not implement Spotify OAuth/user login, playlist access, playback control, or personal library features.
+Do not add new auth providers, password reset, email template work, invite-only access, or role/permission changes in this task.
 
 ---
 
 ## Files likely touched
 
-- `app/actions/mania.ts` or a narrow `app/api/spotify/search/route.ts` endpoint
-- `app/play/` and/or the album submission components used by `PlayShell`
-- `app/results/` / results rendering components if cover art is displayed there
-- `lib/mania/` for normalized Spotify types/client helpers
-- `supabase/migrations/` for persisted metadata fields
-- `lib/database.types.ts` after regenerating Supabase types, if linked env is available
-- `docs/api.md`
-- `docs/schema.md`
-- `docs/database.md`
+- `app/components/SiteHeader.tsx`
+- `app/page.tsx`
+- `app/login/page.tsx` and/or `app/login/ui/LoginForm.tsx`
+- `app/signup/page.tsx` and/or `app/signup/ui/SignupForm.tsx`
+- `app/account/page.tsx`
+- `app/play/page.tsx`
+- `app/results/page.tsx`
+- `lib/mania/url.ts` if safe redirect handling needs extension
 - `docs/roadmap.md`
-- `docs/testing.md` if test instructions change
+- `docs/testing.md`
+- `docs/auth.md` if auth behavior is clarified
 
 ---
 
 ## Done criteria
 
-- [ ] Spotify credentials are read only from server-side env vars. No secret/token appears in client bundles, committed files, docs examples with real values, or browser responses.
-- [ ] Missing Spotify env vars degrade gracefully: manual album entry still works and the UI does not crash.
-- [ ] Search is debounced client-side and returns a small suggestion list suitable for mobile.
-- [ ] Search can find albums directly. Prefer album suggestions first; optionally include track search only if it maps cleanly to albums without excessive requests.
-- [ ] Suggestions show useful metadata: album title, artist(s), release year/date, thumbnail cover art, and Spotify URL.
-- [ ] Selecting a suggestion fills the existing album submission fields and includes cover-art metadata in the submitted round.
-- [ ] Database/schema supports persisted cover art and Spotify metadata for rounds. Recommended fields on `rounds`: `spotify_album_id`, `album_cover_url`, and `spotify_url` if the existing `album_url` remains user-editable/generic.
-- [ ] `/play` renders persisted cover art for current/revealed rounds when available, with a clean fallback for manual entries.
-- [ ] `/results` renders persisted cover art in the round archive/share-adjacent UI when available. Plain-text share summaries may include the Spotify/listen URL but should not include image URLs unless that is already a local pattern.
-- [ ] RLS remains intact; migrations do not broaden access beyond existing round/game visibility.
-- [ ] `docs/api.md`, `docs/schema.md`, `docs/database.md`, and `docs/roadmap.md` describe the new fields/API behavior.
+- [ ] Authenticated users do not see primary "Log in" / "Sign up" CTAs in the global nav or page hero areas where those actions no longer apply.
+- [ ] Signed-out users still see clear Log In / Sign Up paths from public pages.
+- [ ] `/login` and `/signup` handle already-signed-in users gracefully (no confusing forms that create duplicate-auth intent).
+- [ ] Sign out remains available from an authenticated surface.
+- [ ] Safe `next` redirect behavior remains intact and documented if changed.
+- [ ] No Supabase secret/service-role usage is introduced.
+- [ ] `docs/roadmap.md` and `docs/testing.md` include auth-aware navigation checks.
 - [ ] `npm run lint` and `npm run build` pass.
 
 ## Decisions already made (for future agents)
 
-- **Spotify integration** (Phase 3): server-side proxy/API only — secrets and bearer tokens never in the browser.
-- **Share summary scope:** plain-text clipboard export first; no public URLs or image/PDF export in this vertical.
-- **Landing screenshot scope:** use placeholders/screenshot-style panels now; do not require real captured app screenshots for completion.
-- **Carousel:** include a carousel-style presentation for app screenshots/placeholders.
-- **Visual scope:** the landing page may break out of the current restrained UI rules, but document the exception and preserve accessibility.
-- **Spotify auth scope:** no user OAuth/login with Spotify. Use Client Credentials for catalog search only.
-- **Manual fallback:** users must still be able to submit albums manually.
-- **Cover art:** persist selected cover art for the MVP and show it in game/results UI.
+- **Auth provider scope:** keep existing Supabase email/password auth; no OAuth providers in this polish task.
+- **Redirect safety:** continue to sanitize `next` paths to internal root-relative URLs.
+- **Visual consistency:** use the existing sticker UI primitives and avoid introducing a second navigation style.
+- **Authenticated destinations:** prefer Play / Results / Account as signed-in CTAs; choose based on page context.
 
 ## Risks
 
-- Spotify Web API access rules changed in 2026. Catalog search is available, but the app owner may need Spotify Premium and search result limits are lower. Keep queries small and avoid assuming large result pages.
-- Do not commit `.env.local` or credential values. If sample env docs are added, use placeholder values only.
-- Autocomplete can create noisy network traffic. Debounce, cap query length/result count, and handle 429/rate-limit responses gracefully.
-- Spotify responses may omit images or markets. Normalize defensively and keep manual/fallback rendering polished.
-- If Supabase type generation cannot run because the project is not linked or env is missing, update migrations/docs and note the deferred `lib/database.types.ts` regeneration clearly in the final handoff.
+- Server components must read auth state without causing avoidable dynamic behavior on pages that should stay public unless the current app already marks them dynamic.
+- Avoid redirect loops between `/login`, `/signup`, `/account`, and protected pages.
+- Signed-in landing page copy should still make sense for returning users and not hide core onboarding context from signed-out visitors.
