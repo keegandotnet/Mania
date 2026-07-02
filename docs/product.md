@@ -37,6 +37,6 @@ After each round is revealed, players are automatically taken to the Results pag
 
 ## Roadmap
 
-- Phase 3: Spotify catalog search for album autocomplete and cover art (server-side; no user login)
-- Phase 3: Analytics and history
-- Phase 4: Mobile app
+- Complete: Spotify catalog search for album autocomplete and cover art (server-side; no user login)
+- Next: real product screenshots on the landing page and a simpler, more obvious `/play` flow
+- Later: analytics/history and native mobile app

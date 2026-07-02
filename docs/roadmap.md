@@ -46,7 +46,12 @@ A public-facing `/` that explains what Mania is, with clear CTAs (sign up / sign
 
 ## Phase 3.5 — Auth/session polish
 
-- Next: auth-aware navigation and entry CTAs so logged-in users do not see inappropriate Log In / Sign Up prompts, while signed-out users keep clear onboarding paths.
+- ✅ Auth-aware navigation and entry CTAs so logged-in users do not see inappropriate Log In / Sign Up prompts, while signed-out users keep clear onboarding paths.
+
+## Phase 3.6 — Product screenshots + Play simplification
+
+- Next: replace landing placeholder panels with real screenshots from the current product surfaces.
+- Next: simplify `/play` so the primary next action is obvious, with a gamey/fun surface that reduces navigation hunting and visual busywork.
 
 ## Phase 4 — Analytics
 

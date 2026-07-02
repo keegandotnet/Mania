@@ -25,6 +25,9 @@ Scenarios that must stay green as the codebase grows:
 
 - [ ] **Local auth redirects:** Supabase auth works from both `http://localhost:3000` and `http://127.0.0.1:3000` during development.
 - [ ] **Safe `next` redirects:** `/login?next=/play` and `/auth/callback?next=/account` return users to the intended page, while unsafe values such as `javascript:alert(1)` or `//evil.com` fall back to `/account`.
+- [ ] **Signed-out navigation:** global nav and landing hero show clear Sign in / Sign up paths.
+- [ ] **Signed-in navigation:** global nav and landing hero show in-app destinations such as Play, Results, and Account instead of Sign in / Sign up CTAs.
+- [ ] **Signed-in auth pages:** visiting `/login`, `/login?next=/play`, or `/signup` while signed in shows the active-session card with Continue / Play / Results / Sign out actions instead of duplicate auth forms.
 
 ## Manual UI (Play / Results)
 

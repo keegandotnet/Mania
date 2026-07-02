@@ -1,8 +1,21 @@
 import Link from "next/link";
 import { PageShell, sectionCardClass } from "@/app/components/ui";
+import { SignedInAuthCard } from "@/app/components/SignedInAuthCard";
+import { hasSupabasePublicEnv } from "@/lib/supabaseEnv";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { SignupForm } from "./ui/SignupForm";
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  let user = null;
+
+  if (hasSupabasePublicEnv()) {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
+  }
+
   const benefits = [
     {
       eyebrow: "Pick a name",
@@ -59,28 +72,32 @@ export default function SignupPage() {
           </ul>
         </div>
 
-        <section className={sectionCardClass}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
-            Sign up
-          </p>
-          <h2 className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-4xl">
-            Create an account with email and password.
-          </h2>
+        {user ? (
+          <SignedInAuthCard email={user.email} nextPath="/account" />
+        ) : (
+          <section className={sectionCardClass}>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
+              Sign up
+            </p>
+            <h2 className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-4xl">
+              Create an account with email and password.
+            </h2>
 
-          <div className="mt-6">
-            <SignupForm />
-          </div>
+            <div className="mt-6">
+              <SignupForm />
+            </div>
 
-          <p className="mt-6 text-center text-sm text-foreground-secondary">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-bold text-foreground underline-offset-4 hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
-        </section>
+            <p className="mt-6 text-center text-sm text-foreground-secondary">
+              Already have an account?{" "}
+              <Link
+                href="/login"
+                className="font-bold text-foreground underline-offset-4 hover:underline"
+              >
+                Sign in
+              </Link>
+            </p>
+          </section>
+        )}
       </section>
     </PageShell>
   );
