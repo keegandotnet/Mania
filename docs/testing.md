@@ -21,6 +21,14 @@ The script now also asserts:
 
 Scenarios that must stay green as the codebase grows:
 
+## Landing page
+
+- [ ] **Signed-out `/` CTAs:** hero and final CTA show "Start Your League" -> `/signup` and "Sign In" -> `/login`.
+- [ ] **Signed-in `/` CTAs:** hero and final CTA show "Jump Back In" -> `/play` and "Manage Account" -> `/account`; no signed-out-only Log In / Sign Up primary CTA appears in the landing hero.
+- [ ] **Landing product panels:** carousel tabs for Play, Results, and League switch panels; panels read as current product states rather than generic placeholders.
+- [ ] **Landing redaction:** public landing panels do not show private emails, user IDs, real invite codes, or private group data. If real screenshots replace static panels later, capture them from a seeded/sanitized data set only.
+- [ ] **Landing mobile layout:** at narrow widths, hero CTAs stack, the product carousel snap-scrolls horizontally without page overflow, and sticker shadows/tilts do not obscure controls.
+
 ## Auth / redirects
 
 - [ ] **Local auth redirects:** Supabase auth works from both `http://localhost:3000` and `http://127.0.0.1:3000` during development.
