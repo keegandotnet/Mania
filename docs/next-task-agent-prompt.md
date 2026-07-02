@@ -7,6 +7,7 @@ Per [`.cursor/rules/NEXT-AGENT-TASK.mdc`](../.cursor/rules/NEXT-AGENT-TASK.mdc):
 ## Context (2026-07-02)
 
 - Core gameplay, sticker UI, results sharing, account/group management, Spotify album autocomplete with persisted cover art, and auth-aware navigation/entry CTAs are implemented.
+- Before starting this next vertical, validate the auth-aware navigation change on branch `cursor/auth-nav-polish-a65c`; if it looks good in the frontend, proceed with PR review/merge for that auth polish work.
 - The landing page still uses placeholder/screenshot-style app panels. The user wants those replaced with real screenshots from the current product.
 - The user also wants `/play` simplified. Current feedback: the Play UI feels busy and makes it hard to manage navigation / find the next play action.
 - Desired direction: simple, gamey, and fun. The page should not feel like a hunt for the "play" button.
