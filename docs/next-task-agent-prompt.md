@@ -1,69 +1,69 @@
-# Agent task: Auth-aware navigation and entry CTA polish
+# Agent task: Real product screenshots and Play UI simplification
 
 Per [`.cursor/rules/NEXT-AGENT-TASK.mdc`](../.cursor/rules/NEXT-AGENT-TASK.mdc): when you complete a task, post the **next-agent copy-paste prompt** and a **3–5 word title** for the work you just did **in the agent chat**, not in this file. Update this document only with the **substantive task** the next agent should execute after open work is finished.
 
 ---
 
-## Context (2026-06-30)
+## Context (2026-07-02)
 
-- Core gameplay, sticker UI, results sharing, account/group management, and Spotify album autocomplete with persisted cover art are implemented.
-- During Spotify QA, the user noticed that **Log In / Sign Up** entry points still appear on some pages even after a user is authenticated.
-- This is a polish vertical: improve auth-aware navigation and entry CTAs across public/authenticated routes without changing auth providers or adding new account features.
-- Preserve the existing sticker visual system and safe redirect behavior.
+- Core gameplay, sticker UI, results sharing, account/group management, Spotify album autocomplete with persisted cover art, and auth-aware navigation/entry CTAs are implemented.
+- The landing page still uses placeholder/screenshot-style app panels. The user wants those replaced with real screenshots from the current product.
+- The user also wants `/play` simplified. Current feedback: the Play UI feels busy and makes it hard to manage navigation / find the next play action.
+- Desired direction: simple, gamey, and fun. The page should not feel like a hunt for the "play" button.
 
 ---
 
 ## Goal (one vertical)
 
-Make the app navigation and auth entry points accurately reflect signed-in vs signed-out state:
+Replace landing placeholder panels with real product screenshots and simplify `/play` around an obvious primary action:
 
-1. Audit `SiteHeader`, landing page, login page, signup page, account page, play page, and results page for authenticated users seeing inappropriate Log In / Sign Up CTAs.
-2. When signed in, replace public auth CTAs with useful in-app destinations such as Play, Results, Account, or Sign out (following existing product patterns).
-3. When signed out, preserve clear Log In / Sign Up CTAs and safe `next` redirect behavior.
-4. If a signed-in user visits `/login` or `/signup`, show a signed-in state with navigation back into the app or redirect intentionally if that matches existing route conventions.
-5. Keep UI accessible, mobile-friendly, and aligned with `app/components/ui.tsx` primitives.
-6. Update docs/testing/roadmap for auth-aware navigation expectations.
+1. Create real product screenshots from the current app, preferably covering Play, Results, and Account/group management states.
+2. Replace landing placeholder panels/carousel content with those real screenshots or screenshot-backed panels.
+3. Audit `app/play` and `app/play/PlayShell.tsx` for visual hierarchy problems, duplicated actions, and hard-to-find next steps.
+4. Redesign `/play` so the player's immediate next action is prominent for each state: create/join group, create game, start round, submit album, submit review, wait, view reveal, or game over.
+5. Preserve the sticker/friendly-brutalist design language, Spotify autocomplete behavior, host controls, auto-advance, round-limit rules, and protected-route auth behavior.
+6. Update `docs/roadmap.md`, `docs/testing.md`, and `docs/ux.md` or `docs/design.md` with the new Play/screenshot expectations.
 
-Do not add new auth providers, password reset, email template work, invite-only access, or role/permission changes in this task.
+Do not add analytics, public share links, new auth providers, new database schema, or broad navigation/product-scope changes in this task unless required by the Play simplification.
 
 ---
 
 ## Files likely touched
 
-- `app/components/SiteHeader.tsx`
 - `app/page.tsx`
-- `app/login/page.tsx` and/or `app/login/ui/LoginForm.tsx`
-- `app/signup/page.tsx` and/or `app/signup/ui/SignupForm.tsx`
-- `app/account/page.tsx`
+- `app/components/LandingScreenshotCarousel.tsx`
 - `app/play/page.tsx`
+- `app/play/PlayShell.tsx`
+- `app/play/*` form/control components
+- screenshot assets under `public/` if committed as static images
 - `app/results/page.tsx`
-- `lib/mania/url.ts` if safe redirect handling needs extension
 - `docs/roadmap.md`
 - `docs/testing.md`
-- `docs/auth.md` if auth behavior is clarified
+- `docs/ux.md`
+- `docs/design.md`
 
 ---
 
 ## Done criteria
 
-- [ ] Authenticated users do not see primary "Log in" / "Sign up" CTAs in the global nav or page hero areas where those actions no longer apply.
-- [ ] Signed-out users still see clear Log In / Sign Up paths from public pages.
-- [ ] `/login` and `/signup` handle already-signed-in users gracefully (no confusing forms that create duplicate-auth intent).
-- [ ] Sign out remains available from an authenticated surface.
-- [ ] Safe `next` redirect behavior remains intact and documented if changed.
-- [ ] No Supabase secret/service-role usage is introduced.
-- [ ] `docs/roadmap.md` and `docs/testing.md` include auth-aware navigation checks.
+- [ ] Landing page no longer relies on placeholder/synthetic app panels when real product screenshots are available.
+- [ ] Screenshots are reproducible or documented enough that future agents can regenerate them.
+- [ ] `/play` has one obvious primary action for each major game state.
+- [ ] Secondary navigation/actions are still available but visually subordinate.
+- [ ] Spotify autocomplete, manual album fallback, review submission, host controls, and reveal/game-over states still work.
+- [ ] Mobile layout stays easy to scan and does not hide the primary action below excessive chrome.
+- [ ] Docs and manual testing checklist cover screenshot replacement and simplified Play flows.
 - [ ] `npm run lint` and `npm run build` pass.
 
 ## Decisions already made (for future agents)
 
-- **Auth provider scope:** keep existing Supabase email/password auth; no OAuth providers in this polish task.
-- **Redirect safety:** continue to sanitize `next` paths to internal root-relative URLs.
-- **Visual consistency:** use the existing sticker UI primitives and avoid introducing a second navigation style.
-- **Authenticated destinations:** prefer Play / Results / Account as signed-in CTAs; choose based on page context.
+- **Screenshot ownership:** it is okay for the agent to create screenshots if the app can be run locally with available env/test data; otherwise document the exact missing data/env blocker and use the best static product panels possible.
+- **Play hierarchy:** optimize around the user asking "what do I do now?" before exposing supporting details.
+- **Visual consistency:** keep the existing sticker UI primitives, colors, borders, hard shadows, and playful tone.
+- **Scope control:** this is not the analytics phase; do not build stats dashboards as part of the Play cleanup.
 
 ## Risks
 
-- Server components must read auth state without causing avoidable dynamic behavior on pages that should stay public unless the current app already marks them dynamic.
-- Avoid redirect loops between `/login`, `/signup`, `/account`, and protected pages.
-- Signed-in landing page copy should still make sense for returning users and not hide core onboarding context from signed-out visitors.
+- Real screenshots may require representative seed data, hosted Supabase credentials, or a local Supabase reset before capture.
+- Simplifying `/play` can accidentally hide host-only controls or less common states; preserve access while changing hierarchy.
+- Avoid screenshots that embed private user emails, invite codes, or other sensitive live data.
