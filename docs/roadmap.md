@@ -32,10 +32,11 @@ A public-facing `/` that explains what Mania is, with clear CTAs (sign up / sign
 
 - ✅ Mobile-first vertical layout with fewer widgets and a clearer story
 - ✅ Gamey visual direction with richer color, layered cards, and tasteful motion
-- ✅ Screenshot carousel using placeholder/screenshot-style app panels first
+- ✅ Screenshot carousel using sanitized product-state panels modeled on `/play`, `/results`, and `/account`
 - ✅ "How it works" — 3-step explainer (create group → pick albums → rate & review)
 - ✅ Sign up CTA (primary orange button)
-- Deferred: replace placeholder panels with authenticated product screenshots when the app surfaces settle.
+- ✅ Landing page overhaul: clearer "book club for albums" story, current-app game loop copy, and auth-aware top/bottom CTAs.
+- Screenshot capture note: real authenticated product screenshots still require a safe local data set and screenshot tooling; until then, public landing panels must avoid private emails and invite codes.
 
 ## Phase 3 — Spotify integration
 
