@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { PageShell, sectionCardClass } from "@/app/components/ui";
+import { SignedInAuthCard } from "@/app/components/SignedInAuthCard";
 import { sanitizeNextPath } from "@/lib/mania/url";
+import { hasSupabasePublicEnv } from "@/lib/supabaseEnv";
+import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { LoginForm } from "./ui/LoginForm";
 
 type Props = {
@@ -10,6 +13,15 @@ type Props = {
 export default async function LoginPage(props: Props) {
   const searchParams = (await props.searchParams) ?? {};
   const nextPath = sanitizeNextPath(searchParams.next, "/account");
+  let user = null;
+
+  if (hasSupabasePublicEnv()) {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
+  }
 
   const benefits = [
     {
@@ -66,37 +78,41 @@ export default async function LoginPage(props: Props) {
           </ul>
         </div>
 
-        <section className={sectionCardClass}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
-            Sign in
-          </p>
-          <h2 className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-4xl">
-            Use your email and password.
-          </h2>
-
-          {searchParams.error === "auth" ? (
-            <p
-              role="alert"
-              className="mt-5 rounded-2xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
-            >
-              Authentication failed. Try again.
+        {user ? (
+          <SignedInAuthCard email={user.email} nextPath={nextPath} />
+        ) : (
+          <section className={sectionCardClass}>
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
+              Sign in
             </p>
-          ) : null}
+            <h2 className="mt-3 text-balance text-3xl font-black tracking-tight sm:text-4xl">
+              Use your email and password.
+            </h2>
 
-          <div className="mt-6">
-            <LoginForm nextPath={nextPath} />
-          </div>
+            {searchParams.error === "auth" ? (
+              <p
+                role="alert"
+                className="mt-5 rounded-2xl border-2 border-red-300 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-300"
+              >
+                Authentication failed. Try again.
+              </p>
+            ) : null}
 
-          <p className="mt-6 text-center text-sm text-foreground-secondary">
-            No account?{" "}
-            <Link
-              href="/signup"
-              className="font-bold text-foreground underline-offset-4 hover:underline"
-            >
-              Sign up
-            </Link>
-          </p>
-        </section>
+            <div className="mt-6">
+              <LoginForm nextPath={nextPath} />
+            </div>
+
+            <p className="mt-6 text-center text-sm text-foreground-secondary">
+              No account?{" "}
+              <Link
+                href="/signup"
+                className="font-bold text-foreground underline-offset-4 hover:underline"
+              >
+                Sign up
+              </Link>
+            </p>
+          </section>
+        )}
       </section>
     </PageShell>
   );

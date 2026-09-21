@@ -30,3 +30,5 @@ New accounts get a **`profiles`** row from an `auth.users` **trigger**; sign-up 
 - Auth callback is handled at `/auth/callback` (Supabase PKCE exchange).
 - Protected routes (`/play`, `/results`, `/account`) redirect to `/login?next=...` if no session.
 - The `next` parameter is sanitized before navigation: only root-relative internal paths are allowed after sign-in / callback.
+- Public auth entry points are session-aware: when a user is already signed in, `/login` and `/signup` show an active-session card with Continue, Play, Results, and Sign out actions instead of another auth form.
+- The global header and landing hero are also session-aware: signed-out users see onboarding CTAs, while signed-in users see in-app destinations.
