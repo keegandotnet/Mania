@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { inputClass, primaryButtonLgClass } from "@/app/components/ui";
 import { mapSupabaseAuthErrorMessage } from "@/lib/mania/mapAuthError";
 import { mapClientErrorMessage } from "@/lib/mania/mapClientError";
@@ -9,6 +9,11 @@ import { createBrowserSupabaseClient } from "@/lib/supabaseClient";
 
 export function SignupForm() {
   const router = useRouter();
+  const hydrated = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false
+  );
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
@@ -132,7 +137,7 @@ export function SignupForm() {
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={!hydrated || loading}
         className={`${primaryButtonLgClass} mt-1 w-full sm:w-auto`}
       >
         {loading ? "Creating account..." : "Sign up"}
