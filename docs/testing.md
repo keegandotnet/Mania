@@ -41,7 +41,7 @@ Scenarios that must stay green as the codebase grows:
 
 - [ ] **`/account` "Your games" section**: signed-in user sees a list of games they have played in, ordered newest first, with group name, round progress (`Round X of Y` or `Not started`), creation date, and a status badge (`Pending` / `Active` / `Completed`). Empty state ("No games yet…") shown when the user has no game history.
 - [ ] **`/results`** (signed in, in a group with a game): after at least one round is **`revealed`**, scores and reviews show — album title, artist, average score (colored badge), per-player ratings with visual bars, and review text. Empty states when there is no group, no game, or no revealed rounds yet.
-- [ ] **Player display names:** roster labels prefer **`profiles.display_name`**, falling back to email when unset. Verify on Play (inline revealed results, group roster), Results, and after editing on `/account`.
+- [ ] **Player display names:** roster labels prefer **`profiles.display_name`**, falling back to stable `Player N` labels without exposing email. Verify on Play, Results, and after editing on `/account`.
 - [ ] **"Top pick" badge** appears on the highest-average round when ≥ 2 rounds are revealed.
 - [ ] **Auto-navigate to `/results`:** after submitting the last review (round reveals), the browser navigates to `/results` automatically. Same behavior when a non-reviewer's Refresh detects a newly-revealed round.
 - [ ] **`/play` with revealed round:** page stays on Play (no server redirect to `/results`); per-round results card and nav link to Results remain available. Client may still navigate to `/results` after submitting the last review or on Refresh when a round becomes revealed.
@@ -86,8 +86,8 @@ Scenarios that must stay green as the codebase grows:
 
 ## Rounds
 
-- [ ] `startNextRound`: host-only; errors if latest round still `awaiting_album`.
-- [ ] Host `startNextRound` while `awaiting_reviews` forces `revealed` then creates the next round.
+- [ ] `advanceGame`: host-only; errors if latest round is still `awaiting_album`.
+- [ ] Host `advanceGame` while `awaiting_reviews` reveals early, then creates the next round or completes the final round.
 - [ ] Turn order cycles by `player_order` modulo roster size.
 
 ## Album

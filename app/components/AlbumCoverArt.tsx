@@ -73,6 +73,7 @@ export function AlbumCoverArt({
     <img
       src={coverUrl}
       alt={label}
+      referrerPolicy="no-referrer"
       className={cx(
         "shrink-0 border-2 border-foreground object-cover landing-sticker-sm",
         sizeClass[size],

@@ -15,7 +15,7 @@ export async function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-20 border-b-2 border-foreground/10 bg-background/85 backdrop-blur-xl">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-2 py-3 sm:gap-3 sm:px-6">
         <Link
           href="/"
           className="flex min-w-0 items-center gap-3 text-foreground transition-opacity hover:opacity-90"
@@ -23,7 +23,7 @@ export async function SiteHeader() {
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl border-2 border-foreground bg-[linear-gradient(135deg,var(--accent-pink),var(--accent-yellow),var(--accent-lime))] text-base font-black text-foreground landing-sticker-sm">
             M
           </span>
-          <span className="min-w-0">
+          <span className="hidden min-w-0 min-[420px]:block">
             <span className="block text-lg font-black tracking-tight">Mania</span>
             <span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
               Album leagues

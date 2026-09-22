@@ -7,11 +7,11 @@ const baseData: GameResultsData = {
   viewerId: "user-1",
   email: "viewer@example.com",
   viewerDisplayName: "Alice",
-  group: { name: "Friday Club", inviteCode: "ABC123" },
+  group: { id: "group-1", name: "Friday Club", inviteCode: "ABC123" },
   game: { id: "game-1", status: "completed", currentRound: 2, maxRounds: 2 },
   roster: [
-    { userId: "user-1", playerOrder: 0, email: "alice@example.com", displayName: "Alice" },
-    { userId: "user-2", playerOrder: 1, email: "bob@example.com", displayName: "Bob" },
+    { userId: "user-1", playerOrder: 0, displayName: "Alice" },
+    { userId: "user-2", playerOrder: 1, displayName: "Bob" },
   ],
   rounds: [
     {
@@ -20,6 +20,8 @@ const baseData: GameResultsData = {
       albumName: "Second Album",
       artistName: null,
       albumUrl: null,
+      spotifyAlbumId: null,
+      albumCoverUrl: null,
       pickerId: "user-2",
       reviews: [{ userId: "user-1", rating: 7, reviewText: "" }],
     },
@@ -29,6 +31,8 @@ const baseData: GameResultsData = {
       albumName: "First Album",
       artistName: "The Firsts",
       albumUrl: "https://example.com/first",
+      spotifyAlbumId: null,
+      albumCoverUrl: null,
       pickerId: "user-1",
       reviews: [
         { userId: "user-2", rating: 8, reviewText: "Sharp hooks.\nStrong finish." },

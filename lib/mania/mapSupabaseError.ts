@@ -8,6 +8,8 @@ const RPC_MESSAGES: Record<string, string> = {
   group_full: "This group is full (6 members max).",
   not_group_member: "You are not a member of this group.",
   active_game_exists: "This group already has an active game.",
+  not_enough_players: "At least two players are required to create a game.",
+  display_name_required: "Every player needs a display name before a game can start.",
   not_host: "Only the host can do this.",
   game_not_found: "Game not found.",
   game_completed: "This game has already ended.",
@@ -19,8 +21,8 @@ const RPC_MESSAGES: Record<string, string> = {
   game_already_started: "Round limit cannot be changed after the first round has started.",
   max_rounds_below_player_count:
     "Round limit must be at least equal to the number of players in the game.",
-  host_of_active_game:
-    "You are the host of an active game. Ask another player to take over, or end the game before leaving.",
+  active_game_participant:
+    "You are part of the current game. Finish it before leaving this group.",
   not_game_member: "You are not part of this game.",
   album_not_submitted: "The current round is still waiting for an album.",
   empty_roster: "This game has no players.",

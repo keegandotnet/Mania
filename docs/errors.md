@@ -64,5 +64,5 @@ Actions return a discriminated result `{ ok: true, ... } | { ok: false, code, me
 
 | code                 | When |
 |----------------------|------|
-| `album_not_submitted`| Host tried `startNextRound` while the latest round is still `awaiting_album`. |
+| `album_not_submitted`| Host tried `advanceGame` while the latest round is still `awaiting_album`. |
 | `empty_roster`       | `game_members` is empty (should not happen for a properly created game). |

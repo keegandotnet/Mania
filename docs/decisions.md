@@ -18,7 +18,7 @@ These choices are fixed for the current backend implementation so multiple agent
    **Six characters** end to end (DB check + generator). Use a **small, unambiguous uppercase alphabet** (letters/digits that are easy to read aloud—no fancy encoding, checksums, or variable length). Stored uppercase; joins normalize input to uppercase. Codes are unique at the database. Implementation: [`lib/mania/invite.ts`](../lib/mania/invite.ts).
 
 6. **Round limit (max_rounds)**  
-   Host sets `max_rounds` before the first round starts. Minimum is the number of players in the game (so every player gets at least one pick). The limit is **locked** once `games.current_round > 0`. Games are marked `completed` automatically when the round limit is reached (via `start_next_round`). Auto-advance can also be enabled so rounds start automatically after the last review.
+   Host sets `max_rounds` before the first round starts. Minimum is the number of players in the game (so every player gets at least one pick). The limit is **locked** once `games.current_round > 0`. Games are marked `completed` when the final round reveals. Auto-advance can also be enabled so rounds start automatically after the last review.
 
 7. **Reviews are immutable**  
    No `UPDATE` on `reviews` after insert (database enforced).
@@ -27,7 +27,7 @@ These choices are fixed for the current backend implementation so multiple agent
    Blocked in application logic and with a database trigger (`reviews.user_id` ≠ `rounds.created_by` for that round).
 
 9. **Round completion**  
-   Auto-`revealed` when every non-submitter `game_member` has submitted a review; host can force `revealed` by calling `startNextRound` while the round is `awaiting_reviews`.
+   Auto-`revealed` when every non-submitter `game_member` has submitted a review; the host can confirm an early close through `advanceGame` while reviews are pending.
 
 10. **RLS**  
    The first schema migration ships with RLS off; `20250328210000_enable_rls.sql` turns it on with member-scoped reads. **Joins** still go through `join_group_by_invite` so non-members cannot probe `groups` by arbitrary id (see [security.md](./security.md)).

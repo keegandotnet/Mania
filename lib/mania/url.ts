@@ -1,4 +1,9 @@
 const MAX_SHARED_URL_LENGTH = 2048;
+const SPOTIFY_COVER_PATTERN = /^https:\/\/i\.scdn\.co\/image\/[A-Za-z0-9]+$/;
+
+export function isSpotifyCoverUrl(value: string | null | undefined): value is string {
+  return typeof value === "string" && SPOTIFY_COVER_PATTERN.test(value);
+}
 
 export const INVALID_ALBUM_URL_MESSAGE =
   "Album link must be a valid absolute http:// or https:// URL.";

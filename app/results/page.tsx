@@ -6,42 +6,39 @@ import {
   secondaryButtonLgClass,
 } from "@/app/components/ui";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import { getGameResults, type GameResultsData } from "@/app/actions/mania";
+import { getGameResults, getMyGroups, type GameResultsData } from "@/app/actions/mania";
 import { ResultsView } from "./ResultsView";
 
 export const dynamic = "force-dynamic";
 
 type ResultsPageProps = {
-  searchParams?: Promise<{ game?: string }>;
+  searchParams?: Promise<{ game?: string; group?: string }>;
 };
 
 export default async function ResultsPage(props: ResultsPageProps) {
   const searchParams = (await props.searchParams) ?? {};
   const scopedGameId = searchParams.game?.trim() || undefined;
+  const scopedGroupId = searchParams.group?.trim() || undefined;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    const nextPath = scopedGameId
-      ? `/results?game=${encodeURIComponent(scopedGameId)}`
-      : "/results";
+    const nextQuery = new URLSearchParams();
+    if (scopedGameId) nextQuery.set("game", scopedGameId);
+    if (scopedGroupId) nextQuery.set("group", scopedGroupId);
+    const nextPath = nextQuery.size > 0 ? `/results?${nextQuery}` : "/results";
     redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
 
-  const result = await getGameResults(scopedGameId);
-  const data: GameResultsData = result.ok
-    ? result.data
-    : {
-        viewerId: user.id,
-        email: user.email ?? user.id,
-        viewerDisplayName: null,
-        group: null,
-        game: null,
-        roster: [],
-        rounds: [],
-      };
+  const result = await getGameResults(scopedGameId, scopedGroupId);
+  if (!result.ok) throw new Error(result.message);
+  const data: GameResultsData = result.data;
+  const backGroupId = scopedGroupId ?? data.group?.id;
+  const groupsResult = await getMyGroups();
+  if (!groupsResult.ok) throw new Error(groupsResult.message);
+  const groups = groupsResult.data;
 
   return (
     <PageShell>
@@ -61,7 +58,7 @@ export default async function ResultsPage(props: ResultsPageProps) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Link href="/play" className={primaryButtonLgClass}>
+            <Link href={backGroupId ? `/play?group=${encodeURIComponent(backGroupId)}` : "/play"} className={primaryButtonLgClass}>
               Back to Play
             </Link>
             <Link href="/account" className={secondaryButtonLgClass}>
@@ -69,6 +66,21 @@ export default async function ResultsPage(props: ResultsPageProps) {
             </Link>
           </div>
         </header>
+
+        {groups.length > 1 ? (
+          <nav aria-label="Choose results group" className="flex flex-wrap gap-2">
+            {groups.map((group) => (
+              <Link
+                key={group.groupId}
+                href={`/results?group=${encodeURIComponent(group.groupId)}`}
+                aria-current={backGroupId === group.groupId ? "page" : undefined}
+                className={backGroupId === group.groupId ? primaryButtonLgClass : secondaryButtonLgClass}
+              >
+                {group.groupName}
+              </Link>
+            ))}
+          </nav>
+        ) : null}
 
         <ResultsView data={data} />
       </section>

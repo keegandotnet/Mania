@@ -4,14 +4,12 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { actionErr, ok, type ActionResult } from "@/lib/mania/actionResult";
 import { generateInviteCode } from "@/lib/mania/invite";
 import { fromPostgrestError } from "@/lib/mania/mapSupabaseError";
-import { normalizeOptionalHttpUrl } from "@/lib/mania/url";
+import { isSpotifyCoverUrl, normalizeOptionalHttpUrl } from "@/lib/mania/url";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 
 export type GameResultsRosterRow = {
   userId: string;
   playerOrder: number;
-  email: string;
-  /** When null or empty in UI, fall back to `email`. */
   displayName: string | null;
 };
 
@@ -19,9 +17,11 @@ export type GroupRosterRow = {
   userId: string;
   joinedAt: string;
   playerOrder: number;
-  email: string;
   displayName: string | null;
 };
+
+export type GroupChoice = { id: string; name: string };
+export type ParticipationState = "none" | "lobby" | "playing" | "waiting_for_next_game";
 
 /** Populated only when the latest round is `revealed` — scores and review copy for on-/play results. */
 export type MyGameRevealedDetail = {
@@ -35,6 +35,8 @@ export type MyGameState = {
   viewerId: string;
   email: string;
   viewerDisplayName: string | null;
+  groups: GroupChoice[];
+  participation: ParticipationState;
   group: { id: string; name: string; inviteCode: string } | null;
   game: {
     id: string;
@@ -57,6 +59,7 @@ export type MyGameState = {
     isPicker: boolean;
   } | null;
   hasReviewed: boolean;
+  reviewProgress: { submitted: number; expected: number } | null;
   revealedDetail: MyGameRevealedDetail | null;
   /** Current group’s members (join order); null if not in a group. */
   groupRoster: GroupRosterRow[] | null;
@@ -88,7 +91,7 @@ export type GameResultsData = {
   viewerId: string;
   email: string;
   viewerDisplayName: string | null;
-  group: { name: string; inviteCode: string } | null;
+  group: { id: string; name: string; inviteCode: string } | null;
   game: {
     id: string;
     status: string;
@@ -99,41 +102,65 @@ export type GameResultsData = {
   rounds: GameResultsRound[];
 };
 
-export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
+export async function getMyGameState(groupId?: string): Promise<ActionResult<MyGameState>> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return actionErr("unauthorized", "Sign in required.");
 
-  const { data: viewerProf } = await supabase
+  const { data: viewerProf, error: viewerProfileError } = await supabase
     .from("profiles")
     .select("display_name")
     .eq("user_id", user.id)
     .maybeSingle();
+  if (viewerProfileError) return fromPostgrestError(viewerProfileError as PostgrestError);
   const viewerDisplayName = (viewerProf?.display_name as string | null) ?? null;
 
   const empty: MyGameState = {
     viewerId: user.id,
     email: user.email ?? user.id,
     viewerDisplayName,
+    groups: [],
+    participation: "none",
     group: null,
     game: null,
     round: null,
     hasReviewed: false,
+    reviewProgress: null,
     revealedDetail: null,
     groupRoster: null,
   };
 
-  const { data: membership } = await supabase
+  const { data: membershipRows, error: membershipError } = await supabase
     .from("group_members")
-    .select("group_id, joined_at")
+    .select("group_id, joined_at, groups(name)")
     .eq("user_id", user.id)
-    .order("joined_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("joined_at", { ascending: false });
+  if (membershipError) return fromPostgrestError(membershipError as PostgrestError);
 
-  if (!membership) return ok(empty);
+  type MembershipRow = {
+    group_id: string;
+    joined_at: string;
+    groups: { name: string } | { name: string }[] | null;
+  };
+  const memberships = (membershipRows ?? []) as unknown as MembershipRow[];
+  const groups = memberships.map((row) => {
+    const joined = Array.isArray(row.groups) ? row.groups[0] : row.groups;
+    return { id: row.group_id, name: joined?.name ?? "Unknown group" };
+  });
+  empty.groups = groups;
+
+  const requestedGroupId = groupId?.trim();
+  const membership = requestedGroupId
+    ? memberships.find((row) => row.group_id === requestedGroupId)
+    : memberships[0];
+
+  if (!membership) {
+    return requestedGroupId
+      ? actionErr("not_group_member", "You are not a member of that group.")
+      : ok(empty);
+  }
 
   const { data: group, error: gErr } = await supabase
     .from("groups")
@@ -141,11 +168,10 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
     .eq("id", membership.group_id)
     .maybeSingle();
   if (gErr) return fromPostgrestError(gErr as PostgrestError);
-  if (!group) return ok(empty);
+  if (!group) return actionErr("db_error", "Your group could not be loaded. Please try again.");
 
   type GroupMemberRpcRow = {
     user_id: string;
-    email: string;
     display_name: string | null;
     joined_at: string;
     player_order: number;
@@ -159,38 +185,55 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
     userId: row.user_id,
     joinedAt: row.joined_at,
     playerOrder: row.player_order,
-    email: row.email ?? row.user_id,
     displayName: row.display_name,
   }));
 
-  const { data: game, error: gameErr } = await supabase
-    .from("games")
-    .select("id, status, current_round, host_id, max_rounds, auto_advance")
-    .eq("group_id", group.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  type CurrentGameRow = {
+    id: string; status: string; current_round: number; host_id: string;
+    max_rounds: number; auto_advance: boolean; is_participant: boolean; player_count: number;
+  };
+  const { data: currentGames, error: gameErr } = await supabase.rpc(
+    "get_group_current_game",
+    { p_group_id: group.id }
+  );
   if (gameErr) return fromPostgrestError(gameErr as PostgrestError);
+  const game = ((currentGames ?? []) as CurrentGameRow[])[0] ?? null;
 
   if (!game) {
     return ok({
       ...empty,
+      groups,
+      participation: "lobby",
       group: { id: group.id, name: group.name, inviteCode: group.invite_code },
       groupRoster,
     });
   }
 
+  if (!game.is_participant) {
+    return ok({
+      ...empty,
+      groups,
+      participation: game.status === "completed" ? "lobby" : "waiting_for_next_game",
+      group: { id: group.id, name: group.name, inviteCode: group.invite_code },
+      groupRoster,
+      game: {
+        id: game.id, status: game.status, currentRound: game.current_round,
+        isHost: false, maxRounds: game.max_rounds, autoAdvance: game.auto_advance,
+        playerCount: game.player_count,
+      },
+    });
+  }
+
   // Fetch roster + emails + display names for every request (used for playerCount and labels).
-  type GameMemberRpcRow = { user_id: string; email: string; display_name: string | null };
+  type GameMemberRpcRow = { user_id: string; display_name: string | null };
   const { data: emailRows, error: emailErr } = await supabase.rpc("get_game_member_emails", {
     p_game_id: game.id,
   });
   if (emailErr) return fromPostgrestError(emailErr as PostgrestError);
 
-  const memberByUser = new Map<string, { email: string; displayName: string | null }>();
+  const memberByUser = new Map<string, { displayName: string | null }>();
   for (const row of (emailRows ?? []) as GameMemberRpcRow[]) {
     memberByUser.set(row.user_id, {
-      email: row.email ?? row.user_id,
       displayName: row.display_name,
     });
   }
@@ -209,7 +252,6 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
       return {
         userId: uid,
         playerOrder: row.player_order as number,
-        email: m?.email ?? uid,
         displayName: m?.displayName ?? null,
       };
     })
@@ -232,14 +274,22 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
   );
 
   let hasReviewed = false;
+  let reviewProgress: { submitted: number; expected: number } | null = null;
   if (round?.status === "awaiting_reviews") {
-    const { data: review } = await supabase
+    const { data: review, error: reviewError } = await supabase
       .from("reviews")
       .select("id")
       .eq("round_id", round.id)
       .eq("user_id", user.id)
       .maybeSingle();
+    if (reviewError) return fromPostgrestError(reviewError as PostgrestError);
     hasReviewed = !!review;
+    const { count, error: reviewCountError } = await supabase
+      .from("reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("round_id", round.id);
+    if (reviewCountError) return fromPostgrestError(reviewCountError as PostgrestError);
+    reviewProgress = { submitted: count ?? 0, expected: Math.max(0, playerCount - 1) };
   }
 
   let revealedDetail: MyGameRevealedDetail | null = null;
@@ -275,6 +325,8 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
     viewerId: user.id,
     email: user.email ?? user.id,
     viewerDisplayName,
+    groups,
+    participation: game.status === "completed" ? "lobby" : "playing",
     group: { id: group.id, name: group.name, inviteCode: group.invite_code },
     groupRoster,
     game: {
@@ -297,29 +349,36 @@ export async function getMyGameState(): Promise<ActionResult<MyGameState>> {
           spotifyAlbumId: (round.spotify_album_id as string | null) ?? null,
           albumCoverUrl:
             normalizedCurrentRoundCoverUrl.ok &&
-            normalizedCurrentRoundCoverUrl.value?.startsWith("https://")
+            isSpotifyCoverUrl(normalizedCurrentRoundCoverUrl.value)
               ? normalizedCurrentRoundCoverUrl.value
               : null,
           isPicker: round.created_by === user.id,
         }
       : null,
     hasReviewed,
+    reviewProgress,
     revealedDetail,
   });
 }
 
-export async function getGameResults(gameId?: string): Promise<ActionResult<GameResultsData>> {
+export async function getGameResults(
+  gameId?: string,
+  groupId?: string
+): Promise<ActionResult<GameResultsData>> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return actionErr("unauthorized", "Sign in required.");
 
-  const { data: viewerProfResults } = await supabase
+  const { data: viewerProfResults, error: viewerProfileResultsError } = await supabase
     .from("profiles")
     .select("display_name")
     .eq("user_id", user.id)
     .maybeSingle();
+  if (viewerProfileResultsError) {
+    return fromPostgrestError(viewerProfileResultsError as PostgrestError);
+  }
   const viewerDisplayName = (viewerProfResults?.display_name as string | null) ?? null;
 
   const empty: GameResultsData = {
@@ -341,7 +400,7 @@ export async function getGameResults(gameId?: string): Promise<ActionResult<Game
     groups?: { name: string; invite_code: string } | { name: string; invite_code: string }[] | null;
   };
 
-  let groupForResults: { name: string; inviteCode: string } | null = null;
+  let groupForResults: { id: string; name: string; inviteCode: string } | null = null;
   let gameForResults: ResultsGameRow | null = null;
   const requestedGameId = gameId?.trim() || null;
 
@@ -352,24 +411,34 @@ export async function getGameResults(gameId?: string): Promise<ActionResult<Game
       .eq("id", requestedGameId)
       .maybeSingle();
     if (scopedGameErr) return fromPostgrestError(scopedGameErr as PostgrestError);
-    if (!scopedGame) return ok(empty);
+    if (!scopedGame) return actionErr("game_not_found", "Game not found or you do not have access.");
 
     gameForResults = scopedGame as unknown as ResultsGameRow;
     const joinedGroup = Array.isArray(gameForResults.groups) ? gameForResults.groups[0] : gameForResults.groups;
     groupForResults = {
+      id: gameForResults.group_id,
       name: joinedGroup?.name ?? "Unknown group",
       inviteCode: joinedGroup?.invite_code ?? "",
     };
   } else {
-    const { data: membership } = await supabase
+    const requestedGroupId = groupId?.trim();
+    const membershipQuery = supabase
       .from("group_members")
       .select("group_id, joined_at")
       .eq("user_id", user.id)
       .order("joined_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .limit(1);
+    const { data: membershipRows, error: membershipError } = requestedGroupId
+      ? await membershipQuery.eq("group_id", requestedGroupId)
+      : await membershipQuery;
+    if (membershipError) return fromPostgrestError(membershipError as PostgrestError);
+    const membership = membershipRows?.[0] ?? null;
 
-    if (!membership) return ok(empty);
+    if (!membership) {
+      return requestedGroupId
+        ? actionErr("not_group_member", "You are not a member of that group.")
+        : ok(empty);
+    }
 
     const { data: group, error: gErr } = await supabase
       .from("groups")
@@ -377,9 +446,9 @@ export async function getGameResults(gameId?: string): Promise<ActionResult<Game
       .eq("id", membership.group_id)
       .maybeSingle();
     if (gErr) return fromPostgrestError(gErr as PostgrestError);
-    if (!group) return ok(empty);
+    if (!group) return actionErr("db_error", "Your group could not be loaded. Please try again.");
 
-    groupForResults = { name: group.name, inviteCode: group.invite_code };
+    groupForResults = { id: group.id, name: group.name, inviteCode: group.invite_code };
 
     const { data: latestGame, error: gameErr } = await supabase
       .from("games")
@@ -402,17 +471,16 @@ export async function getGameResults(gameId?: string): Promise<ActionResult<Game
 
   if (!gameForResults || !groupForResults) return ok(empty);
 
-  type GameMemberRpcRowResults = { user_id: string; email: string; display_name: string | null };
+  type GameMemberRpcRowResults = { user_id: string; display_name: string | null };
   const { data: emailRowsResults, error: emailErrResults } = await supabase.rpc(
     "get_game_member_emails",
     { p_game_id: gameForResults.id }
   );
   if (emailErrResults) return fromPostgrestError(emailErrResults as PostgrestError);
 
-  const memberMapResults = new Map<string, { email: string; displayName: string | null }>();
+  const memberMapResults = new Map<string, { displayName: string | null }>();
   for (const row of (emailRowsResults ?? []) as GameMemberRpcRowResults[]) {
     memberMapResults.set(row.user_id, {
-      email: row.email ?? row.user_id,
       displayName: row.display_name,
     });
   }
@@ -430,7 +498,6 @@ export async function getGameResults(gameId?: string): Promise<ActionResult<Game
       return {
         userId: uid,
         playerOrder: row.player_order as number,
-        email: m?.email ?? uid,
         displayName: m?.displayName ?? null,
       };
     })
@@ -490,7 +557,7 @@ export async function getGameResults(gameId?: string): Promise<ActionResult<Game
       albumUrl: normalizedAlbumUrl.ok ? normalizedAlbumUrl.value : null,
       spotifyAlbumId: (row.spotify_album_id as string | null) ?? null,
       albumCoverUrl:
-        normalizedCoverUrl.ok && normalizedCoverUrl.value?.startsWith("https://")
+        normalizedCoverUrl.ok && isSpotifyCoverUrl(normalizedCoverUrl.value)
           ? normalizedCoverUrl.value
           : null,
       pickerId: row.created_by as string,
@@ -551,6 +618,9 @@ export async function createGroup(name: string): Promise<ActionResult<{ groupId:
 
   const trimmed = name.trim();
   if (!trimmed) return actionErr("invalid_input", "Group name is required.");
+  if (trimmed.length > 80) {
+    return actionErr("invalid_input", "Group name must be 80 characters or fewer.");
+  }
 
   for (let attempt = 0; attempt < 10; attempt++) {
     const invite = generateInviteCode();
@@ -663,19 +733,33 @@ export async function updateGameAutoAdvance(
   return ok({ autoAdvance });
 }
 
-export async function startNextRound(gameId: string): Promise<ActionResult<{ roundId: string }>> {
+export async function advanceGame(gameId: string): Promise<ActionResult<{
+  roundId: string | null;
+  revealedRoundId: string | null;
+  completed: boolean;
+}>> {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return actionErr("unauthorized", "Sign in required.");
 
-  const { data, error } = await supabase.rpc("start_next_round", {
+  const { data, error } = await supabase.rpc("advance_game", {
     p_game_id: gameId,
   });
 
   if (error) return fromPostgrestError(error);
-  return ok({ roundId: data as string });
+  const row = (data as Array<{
+    round_id: string | null;
+    revealed_round_id: string | null;
+    completed: boolean;
+  }> | null)?.[0];
+  if (!row) return actionErr("db_error", "The game did not advance. Please try again.");
+  return ok({
+    roundId: row.round_id,
+    revealedRoundId: row.revealed_round_id,
+    completed: row.completed,
+  });
 }
 
 export async function submitAlbum(
@@ -695,6 +779,9 @@ export async function submitAlbum(
   if (!albumName.trim() || !artistName.trim()) {
     return actionErr("invalid_input", "Album name and artist are required.");
   }
+  if (albumName.trim().length > 200 || artistName.trim().length > 200) {
+    return actionErr("invalid_input", "Album and artist names must be 200 characters or fewer.");
+  }
   const normalizedAlbumUrl = normalizeOptionalHttpUrl(albumUrl);
   if (!normalizedAlbumUrl.ok) {
     return actionErr("invalid_album_url", normalizedAlbumUrl.message);
@@ -711,11 +798,11 @@ export async function submitAlbum(
   }
   if (
     normalizedCoverUrl.value &&
-    !normalizedCoverUrl.value.startsWith("https://")
+    !isSpotifyCoverUrl(normalizedCoverUrl.value)
   ) {
     return actionErr(
       "invalid_cover_url",
-      "Cover art link must be a valid absolute https:// URL."
+      "Cover art must come from Spotify's image service."
     );
   }
 
@@ -769,10 +856,11 @@ export async function getMyGroups(): Promise<ActionResult<GroupMembershipItem[]>
   // Count members per group (used to warn when leaving as the last member).
   const memberCountMap = new Map<string, number>();
   if (groupIds.length > 0) {
-    const { data: countRows } = await supabase
+    const { data: countRows, error: countError } = await supabase
       .from("group_members")
       .select("group_id")
       .in("group_id", groupIds);
+    if (countError) return fromPostgrestError(countError as PostgrestError);
     for (const cr of (countRows ?? []) as { group_id: string }[]) {
       memberCountMap.set(cr.group_id, (memberCountMap.get(cr.group_id) ?? 0) + 1);
     }
@@ -859,6 +947,9 @@ export async function submitReview(
 
   if (!Number.isFinite(rating)) {
     return actionErr("invalid_rating", "Rating must be a number.");
+  }
+  if (reviewText.length > 5000) {
+    return actionErr("invalid_input", "Review must be 5,000 characters or fewer.");
   }
 
   const { error } = await supabase.rpc("submit_review", {

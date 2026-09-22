@@ -147,6 +147,7 @@ export function AlbumAutocomplete({
           <span className="text-foreground">Album</span>
           <input
             value={query}
+            maxLength={200}
             disabled={disabled}
             autoComplete="off"
             role="combobox"
@@ -263,6 +264,7 @@ export function AlbumAutocomplete({
         <span className="text-foreground">Artist</span>
         <input
           value={artistName}
+          maxLength={200}
           disabled={disabled}
           onChange={(event) => handleArtistInputChange(event.target.value)}
           className={inputClass}

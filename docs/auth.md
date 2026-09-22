@@ -20,7 +20,7 @@ For local development, keep both `http://localhost:3000` and `http://127.0.0.1:3
 
 ## Display names
 
-Optional **`profiles.display_name`** (1–80 non-whitespace characters when set) is shown on Play and Results instead of email. If unset, UI falls back to **auth email**. Values are readable only for users who share **at least one group** (RLS), plus each user’s own row; game and group rosters use security-definer RPCs (`get_game_member_emails`, `get_group_member_profiles`) that enforce membership before returning emails or names.
+**`profiles.display_name`** (1–80 non-whitespace characters) is required for new gameplay. Legacy empty profiles receive stable `Player N` labels; peer account emails are not returned to Play or Results. Profile values remain readable only to the owner and users who share a group.
 
 New accounts get a **`profiles`** row from an `auth.users` **trigger**; sign-up can pass `display_name` via `raw_user_meta_data` (see `/signup`). Signed-in users can edit their name on **`/account`**.
 

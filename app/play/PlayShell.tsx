@@ -24,7 +24,7 @@ import {
   getMyGameState,
   joinGroup,
   leaveGroup,
-  startNextRound,
+  advanceGame,
   submitAlbum,
   submitReview,
   updateGameAutoAdvance,
@@ -72,6 +72,17 @@ function statusFor(state: MyGameState): {
       detail: `Invite code ${group.inviteCode}. Once everyone is in, create a game and start the first round.`,
       tone: "lime",
       tag: "No game",
+      urgent: false,
+    };
+  }
+
+  if (state.participation === "waiting_for_next_game") {
+    return {
+      eyebrow: "Next game",
+      title: "A game is already in progress",
+      detail: "You joined after its roster was locked. You are in the group and will play in the next game.",
+      tone: "peach",
+      tag: "Waiting",
       urgent: false,
     };
   }
@@ -277,8 +288,11 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
 
   function refresh(prevRoundStatus?: string) {
     startTransition(async () => {
-      const result = await getMyGameState();
-      if (!result.ok) return;
+      const result = await getMyGameState(state.group?.id);
+      if (!result.ok) {
+        setGameFb({ kind: "error", message: result.message });
+        return;
+      }
 
       setState(result.data);
       if (result.data.game?.maxRounds != null) {
@@ -289,7 +303,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
         result.data.round?.status === "revealed" &&
         prevRoundStatus !== "revealed"
       ) {
-        router.push("/results");
+        router.push(`/results?group=${encodeURIComponent(result.data.group?.id ?? "")}`);
       }
     });
   }
@@ -321,7 +335,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
   const showHostRoundControl =
     !!game?.isHost &&
     game.status !== "completed" &&
-    (!round || round.status === "revealed");
+    (!round || round.status === "revealed" || round.status === "awaiting_reviews");
 
   const playRoundAvg =
     revealedDetail && revealedDetail.reviews.length > 0
@@ -333,6 +347,23 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
+      {state.groups.length > 1 ? (
+        <label className="flex max-w-md flex-col gap-2 text-sm font-bold">
+          <span>Open group</span>
+          <select
+            className={inputClass}
+            value={group?.id ?? ""}
+            onChange={(event) => {
+              const nextGroup = event.target.value;
+              router.push(`/play?group=${encodeURIComponent(nextGroup)}`);
+            }}
+          >
+            {state.groups.map((choice) => (
+              <option key={choice.id} value={choice.id}>{choice.name}</option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       <section className={cx(toneCardClass(status.tone), "p-6 sm:p-8")}>
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -369,12 +400,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <StatTile
               label="Identity"
-              value={state.viewerDisplayName?.trim() || state.email}
-              hint={
-                state.viewerDisplayName?.trim() ? (
-                  <span className="break-all font-mono">{state.email}</span>
-                ) : null
-              }
+              value={state.viewerDisplayName?.trim() || "Set a display name"}
             />
             <StatTile label="Group" value={group?.name ?? "Not joined yet"} />
             <StatTile
@@ -395,7 +421,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
 
           <div className="flex flex-wrap items-center gap-3">
             {(game || revealedDetail) && (
-              <Link href="/results" className={secondaryButtonClass}>
+              <Link href={`/results?group=${encodeURIComponent(group?.id ?? "")}`} className={secondaryButtonClass}>
                 View results
               </Link>
             )}
@@ -417,7 +443,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
       </section>
 
       {game?.status === "completed" ? (
-        <section className={cx(toneCardClass("yellow"), "p-6 sm:p-7")}>
+        <section className={cx(toneCardClass("yellow"), "order-1 p-6 sm:p-7")}>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-yellow-fg">
             Finished run
           </p>
@@ -441,7 +467,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
       ) : null}
 
       {group && groupRoster.length > 0 ? (
-        <section className={stickerCardClass}>
+        <section className={cx(stickerCardClass, "order-2")}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
@@ -469,9 +495,6 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
                 <p className="mt-3 text-sm font-bold text-foreground">
                   {groupMemberLabel(viewerId, member.userId, groupRoster)}
                 </p>
-                <p className="mt-1 break-all text-xs text-foreground-secondary">
-                  {member.email}
-                </p>
               </div>
             ))}
           </div>
@@ -482,7 +505,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
       game &&
       game.status !== "completed" &&
       round?.status === "revealed" ? (
-        <section className={cx(toneCardClass("yellow"), "p-6 sm:p-7")}>
+        <section className={cx(toneCardClass("yellow"), "order-1 p-6 sm:p-7")}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex min-w-0 flex-1 gap-4">
               <AlbumCoverArt
@@ -607,7 +630,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
       ) : null}
 
       {showHostRoundControl ? (
-        <section className={cx(toneCardClass("peach"), "p-6 sm:p-7")}>
+        <section className={cx(toneCardClass("peach"), "order-1 p-6 sm:p-7")}>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-peach-fg">
             Host controls
           </p>
@@ -759,36 +782,49 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <button
               type="button"
-              disabled={pending || !canStartRound}
+            disabled={pending || (!canStartRound && round?.status !== "awaiting_reviews")}
               title={
                 !canStartRound && round?.status === "awaiting_album"
                   ? "Waiting for the picker to submit an album."
                   : !canStartRound && round?.status === "awaiting_reviews"
-                    ? "Waiting for every review to come in."
+                    ? "Close the round early and reveal submitted reviews."
                     : undefined
               }
               className={primaryButtonClass}
               onClick={() => {
                 setGameFb(null);
                 startTransition(async () => {
-                  const result = await startNextRound(gameId);
+                  if (
+                    round?.status === "awaiting_reviews" &&
+                    !window.confirm(
+                      `Reveal now with ${state.reviewProgress?.submitted ?? 0} of ${state.reviewProgress?.expected ?? 0} reviews? Missing reviews cannot be added afterward.`
+                    )
+                  ) return;
+                  const result = await advanceGame(gameId);
                   if (!result.ok) {
                     setGameFb({ kind: "error", message: result.message });
                     return;
                   }
-                  setGameFb({ kind: "ok", message: "Round started." });
+                  setGameFb({
+                    kind: "ok",
+                    message: result.data.completed ? "Final round revealed. Game complete." : "Game advanced.",
+                  });
                   refresh();
                 });
               }}
             >
-              {round?.status === "revealed" ? "Start next round" : "Start round"}
+              {round?.status === "awaiting_reviews"
+                ? "Close round early"
+                : round?.status === "revealed"
+                  ? "Start next round"
+                  : "Start round"}
             </button>
             {!canStartRound && round ? (
               <span className="text-sm text-foreground-secondary">
                 {round.status === "awaiting_album"
                   ? "Blocked until the picker posts the album."
                   : round.status === "awaiting_reviews"
-                    ? "Blocked until every review is in."
+                    ? `${state.reviewProgress?.submitted ?? 0} of ${state.reviewProgress?.expected ?? 0} reviews submitted. You can close early if someone is unavailable.`
                     : null}
               </span>
             ) : null}
@@ -800,7 +836,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
       ) : null}
 
       {showAlbumForm ? (
-        <section className={cx(toneCardClass("orange"), "p-6 sm:p-7")}>
+        <section className={cx(toneCardClass("orange"), "order-1 p-6 sm:p-7")}>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-orange-fg">
             Picker action
           </p>
@@ -882,7 +918,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
       ) : null}
 
       {showReviewForm ? (
-        <section className={cx(toneCardClass("pink"), "p-6 sm:p-7")}>
+        <section className={cx(toneCardClass("pink"), "order-1 p-6 sm:p-7")}>
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-pink-fg">
@@ -1013,6 +1049,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
                 <textarea
                   value={reviewText}
                   rows={6}
+                  maxLength={5000}
                   onChange={(event) => setReviewText(event.target.value)}
                   className={textareaClass}
                   placeholder="What landed? What missed? What would you bring up if the group argued about this one?"
@@ -1038,7 +1075,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
                       }
                       setReviewText("");
                       if (result.data.revealed) {
-                        router.push("/results");
+                        router.push(`/results?group=${encodeURIComponent(groupId)}`);
                       } else {
                         setReviewFb({
                           kind: "ok",
@@ -1112,8 +1149,8 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
         </section>
       ) : null}
 
-      {noGroup || needsGameCreation ? (
-        <section className={stickerCardClass}>
+      {noGroup || needsGameCreation || state.groups.length > 0 ? (
+        <section className={cx(stickerCardClass, "order-1")}>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
             Setup
           </p>
@@ -1121,7 +1158,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
             Build the room before the round starts
           </h2>
 
-          {noGroup ? (
+          {noGroup || state.groups.length > 0 ? (
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <div
                 className={cx(
@@ -1144,6 +1181,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
                     value={groupName}
                     onChange={(event) => setGroupName(event.target.value)}
                     placeholder="Group name"
+                    maxLength={80}
                     className={inputClass}
                   />
                   <button
@@ -1166,7 +1204,8 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
                           message: `Group created. Invite code: ${result.data.inviteCode}`,
                         });
                         setGroupName("");
-                        refresh();
+                        router.push(`/play?group=${encodeURIComponent(result.data.groupId)}`);
+                        router.refresh();
                       });
                     }}
                   >
@@ -1221,7 +1260,8 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
                         }
                         setJoinFb({ kind: "ok", message: "Joined group." });
                         setJoinInvite("");
-                        refresh();
+                        router.push(`/play?group=${encodeURIComponent(result.data.groupId)}`);
+                        router.refresh();
                       });
                     }}
                   >
@@ -1263,7 +1303,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   type="button"
-                  disabled={pending}
+                      disabled={pending || groupRoster.length < 2 || !state.viewerDisplayName?.trim()}
                   className={primaryButtonClass}
                   onClick={() => {
                     setGameFb(null);
@@ -1290,7 +1330,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
       ) : null}
 
       {group && game && game.status !== "completed" ? (
-        <section className={cx(toneCardClass("lime"), "p-6 sm:p-7")}>
+        <section className={cx(toneCardClass("lime"), "order-2 p-6 sm:p-7")}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-lime-fg">
@@ -1308,7 +1348,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
       ) : null}
 
       {group ? (
-        <section className={stickerCardClass}>
+        <section className={cx(stickerCardClass, "order-2")}>
           <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-foreground-secondary">
             Membership
           </p>
@@ -1330,8 +1370,8 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
             <div className="mt-4 flex flex-col gap-3 rounded-2xl border-2 border-red-300 bg-red-50 p-4 dark:border-red-900/60 dark:bg-red-950/30">
               <p className="text-sm leading-7 text-foreground/85">
                 If you are the only member, the group and its game data will be
-                removed. If other members remain and you host an active game,
-                end that game first.
+                preserved. Players in a pending or active game must finish it
+                before leaving; late joiners may leave immediately.
               </p>
               <div className="flex flex-wrap gap-3">
                 <button

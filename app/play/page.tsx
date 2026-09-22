@@ -7,31 +7,27 @@ import { PlayShell } from "./PlayShell";
 
 export const dynamic = "force-dynamic";
 
-export default async function PlayPage() {
+type PlayPageProps = { searchParams?: Promise<{ group?: string }> };
+
+export default async function PlayPage(props: PlayPageProps) {
+  const searchParams = (await props.searchParams) ?? {};
+  const selectedGroupId = searchParams.group?.trim() || undefined;
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login?next=/play");
+    const nextPath = selectedGroupId
+      ? `/play?group=${encodeURIComponent(selectedGroupId)}`
+      : "/play";
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`);
   }
 
-  const result = await getMyGameState();
+  const result = await getMyGameState(selectedGroupId);
   const spotifyEnabled = await isSpotifySearchEnabled();
-  const initialState: MyGameState = result.ok
-    ? result.data
-    : {
-        viewerId: user.id,
-        email: user.email ?? user.id,
-        viewerDisplayName: null,
-        group: null,
-        game: null,
-        round: null,
-        hasReviewed: false,
-        revealedDetail: null,
-        groupRoster: null,
-      };
+  if (!result.ok) throw new Error(result.message);
+  const initialState: MyGameState = result.data;
 
   return (
     <PageShell>

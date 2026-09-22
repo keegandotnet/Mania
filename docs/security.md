@@ -44,7 +44,7 @@ Each RPC uses `security definer` with `search_path = public`, revokes `PUBLIC`, 
 | `create_game_for_group` | Caller must be group member; snapshots roster into `game_members`. |
 | `update_game_max_rounds` | Host-only; blocked after first round starts; enforces min = player count. |
 | `update_game_auto_advance` | Host-only auto-advance flag update. |
-| `start_next_round` | Caller must be host; locks and advances round state; errors if advancing would pass `max_rounds`. |
+| `advance_game` | Caller must be host; locks the game, reveals if needed, and starts the next round or completes the final round atomically. |
 | `submit_album` | Caller must be active round submitter; optional `album_url` must be blank / `NULL` or absolute `http://` / `https://`; optional `spotify_album_id` and `album_cover_url` validated when present. |
 | `submit_review` | Caller must be non-submitter game member; rating bounds enforced. |
 | `get_game_member_emails` | Returns `(user_id, email, display_name)` for all game members; caller must be a game member. |

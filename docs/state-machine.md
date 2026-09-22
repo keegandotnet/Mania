@@ -10,8 +10,8 @@
 
 Transitions:
 
-- `pending` → `active`: when the first round is created (`startNextRound`).
-- `active` → `completed`: when the **last required review** on the **final** round is submitted (`submit_review` reveals that round, then sets the game to `completed` if `round_number >= max_rounds`). Starting a new round beyond the limit is rejected by `start_next_round` instead of completing the game.
+- `pending` → `active`: when the first round is created (`advanceGame`).
+- `active` → `completed`: when the final required review arrives, or when the host confirms an early close on the final round. Reveal and completion happen atomically.
 
 ## Round status (`rounds.status`)
 
@@ -24,7 +24,7 @@ Transitions:
 Transitions:
 
 - `awaiting_album` → `awaiting_reviews`: successful `submitAlbum`.
-- `awaiting_reviews` → `revealed`: all expected reviews received **or** host advances via `startNextRound` (early advance).
+- `awaiting_reviews` → `revealed`: all expected reviews received **or** the host confirms `advanceGame` (early close).
 - No transitions backward in MVP.
 
 ## Who triggers what
@@ -32,7 +32,7 @@ Transitions:
 | Action            | Actor |
 |-------------------|--------|
 | `createGame`      | Any group member (becomes host stored as `host_id`). |
-| `startNextRound`  | **Host only.** If the latest round is `awaiting_reviews`, this call reveals it (early advance), then creates the next round. Errors if the next round would exceed `max_rounds`. |
+| `advanceGame`  | **Host only.** Reveals an awaiting-review round, then starts the next round or completes the game at the configured limit. |
 | `submitAlbum`     | The round's designated submitter (`rounds.created_by`) only. |
 | `submitReview`    | Any `game_members` row for that game **except** the round submitter. On the **final** round, the last required review reveals the round and may set the game to `completed` when `round_number >= max_rounds`. |
 | `updateGameMaxRounds` | **Host only.** Only while `current_round = 0` (before first round). Min = player count. |

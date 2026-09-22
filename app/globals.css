@@ -95,6 +95,11 @@ body {
   color: var(--foreground);
 }
 
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--accent-orange);
+  outline-offset: 3px;
+}
+
 @keyframes landing-float {
   0%,
   100% {

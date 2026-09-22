@@ -1,14 +1,15 @@
-/** Shared roster row shape for display-name + email fallback labels. */
+/** Public roster shape. Account email is intentionally never included. */
 export type MemberRosterRow = {
   userId: string;
-  email: string;
   displayName: string | null;
+  playerOrder?: number;
 };
 
 export function memberLabel(viewerId: string, userId: string, roster: MemberRosterRow[]): string {
   const row = roster.find((r) => r.userId === userId);
   const name = row?.displayName?.trim();
-  const email = row?.email ?? "";
-  const fallback = email || (userId === viewerId ? "You" : "Teammate");
-  return name || fallback;
+  if (name) return name;
+  if (userId === viewerId) return "You";
+  const index = row?.playerOrder ?? roster.findIndex((r) => r.userId === userId);
+  return index >= 0 ? `Player ${index + 1}` : "Player";
 }

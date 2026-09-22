@@ -220,9 +220,7 @@ export function LandingScreenshotCarousel() {
             What new players will actually use.
           </h2>
           <p className="mt-3 text-sm text-foreground-secondary">
-            Real screenshot capture is blocked in this checkout by missing local
-            app data and screenshot tooling, so these are redacted static panels
-            modeled on the current product UI.
+            A quick tour of the private rooms, round flow, and results your club uses.
           </p>
         </div>
         <div
@@ -237,12 +235,24 @@ export function LandingScreenshotCarousel() {
                 key={panel.route}
                 type="button"
                 onClick={() => scrollToPanel(index)}
+                onKeyDown={(event) => {
+                  if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+                  event.preventDefault();
+                  const direction = event.key === "ArrowRight" ? 1 : -1;
+                  const next = (index + direction + panels.length) % panels.length;
+                  scrollToPanel(next);
+                  document.getElementById(`preview-tab-${next}`)?.focus();
+                }}
+                role="tab"
+                id={`preview-tab-${index}`}
+                aria-controls={`preview-panel-${index}`}
+                aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
                 className={`min-h-12 rounded-2xl border-2 px-5 text-sm font-bold transition-colors ${
                   isActive
                     ? "border-foreground bg-foreground text-background landing-sticker-sm"
                     : "border-foreground/15 bg-surface text-foreground hover:bg-surface-raised"
                 }`}
-                aria-pressed={isActive}
               >
                 {panel.navLabel}
               </button>
@@ -261,9 +271,12 @@ export function LandingScreenshotCarousel() {
         }}
         className="mt-7 flex snap-x snap-mandatory gap-5 overflow-x-auto overscroll-x-contain scroll-smooth pb-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {panels.map((panel) => (
+        {panels.map((panel, index) => (
           <article
             key={panel.route}
+            role="tabpanel"
+            id={`preview-panel-${index}`}
+            aria-labelledby={`preview-tab-${index}`}
             className={`min-w-full snap-center rounded-[2rem] border-2 border-foreground bg-gradient-to-br ${panel.frameClassName} p-4 landing-sticker-sm sm:p-6 lg:min-w-[72%]`}
           >
             <div className="mx-auto max-w-md rounded-[2.25rem] border-2 border-foreground/15 bg-background/85 p-3">

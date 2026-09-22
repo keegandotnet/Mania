@@ -2,7 +2,7 @@ export {
   createGame,
   createGroup,
   joinGroup,
-  startNextRound,
+  advanceGame,
   submitAlbum,
   submitReview,
 } from "./mania";

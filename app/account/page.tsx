@@ -51,18 +51,21 @@ export default async function AccountPage() {
     redirect("/login?next=/account");
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("display_name")
     .eq("user_id", user.id)
     .maybeSingle();
+  if (profileError) throw new Error("Could not load your profile.");
   const initialDisplayName = (profile?.display_name as string | null) ?? null;
 
   const historyResult = await getMyGameHistory();
-  const gameHistory = historyResult.ok ? historyResult.data : [];
+  if (!historyResult.ok) throw new Error(historyResult.message);
+  const gameHistory = historyResult.data;
 
   const groupsResult = await getMyGroups();
-  const myGroups = groupsResult.ok ? groupsResult.data : [];
+  if (!groupsResult.ok) throw new Error(groupsResult.message);
+  const myGroups = groupsResult.data;
 
   return (
     <PageShell>
@@ -93,7 +96,7 @@ export default async function AccountPage() {
 
         <section className="rounded-[2.5rem] border-2 border-foreground bg-accent-yellow/30 p-6 landing-sticker sm:p-8">
           <div className="flex flex-col gap-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-accent-yellow-fg">
                   Profile summary
@@ -228,11 +231,16 @@ export default async function AccountPage() {
                           <CopyInviteButton inviteCode={group.inviteCode} />
                         </div>
                       </div>
-                      <LeaveGroupButton
-                        groupId={group.groupId}
-                        groupName={group.groupName}
-                        memberCount={group.memberCount}
-                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Link href={`/play?group=${encodeURIComponent(group.groupId)}`} className={secondaryButtonSmClass}>
+                          Open group
+                        </Link>
+                        <LeaveGroupButton
+                          groupId={group.groupId}
+                          groupName={group.groupName}
+                          memberCount={group.memberCount}
+                        />
+                      </div>
                     </div>
                   </li>
                 ))}

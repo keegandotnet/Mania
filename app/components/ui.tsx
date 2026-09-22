@@ -27,12 +27,12 @@ export const sectionCardClass =
   "rounded-[2.5rem] border-2 border-foreground bg-surface p-6 landing-sticker sm:p-9";
 
 export const inputClass =
-  "rounded-2xl border-2 border-foreground/15 bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-foreground-secondary focus:border-foreground/45 disabled:opacity-50";
+  "rounded-2xl border-2 border-foreground/15 bg-surface px-4 py-3 text-sm font-medium text-foreground outline-none transition-colors placeholder:text-foreground-secondary focus:border-foreground/45 focus-visible:ring-4 focus-visible:ring-accent-orange/40 disabled:opacity-50";
 export const textareaClass =
-  "min-h-32 rounded-2xl border-2 border-foreground/15 bg-surface px-4 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-foreground-secondary focus:border-foreground/45 disabled:opacity-50";
+  "min-h-32 rounded-2xl border-2 border-foreground/15 bg-surface px-4 py-3 text-sm leading-relaxed text-foreground outline-none transition-colors placeholder:text-foreground-secondary focus:border-foreground/45 focus-visible:ring-4 focus-visible:ring-accent-orange/40 disabled:opacity-50";
 
 const baseButton =
-  "inline-flex min-h-12 items-center justify-center rounded-2xl border-2 px-6 text-sm font-bold transition-[transform,box-shadow,background-color,color] disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex min-h-12 items-center justify-center rounded-2xl border-2 px-6 text-sm font-bold transition-[transform,box-shadow,background-color,color] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-orange/40 disabled:cursor-not-allowed disabled:opacity-40";
 
 export const primaryButtonClass = `${baseButton} border-foreground bg-accent-orange text-white landing-sticker landing-sticker-press hover:bg-accent-orange-hover`;
 export const secondaryButtonClass = `${baseButton} border-foreground/15 bg-surface text-foreground landing-sticker-sm landing-sticker-press hover:bg-surface-raised`;
@@ -40,13 +40,13 @@ export const ghostButtonClass = `${baseButton} border-transparent bg-transparent
 export const destructiveButtonClass = `${baseButton} border-foreground bg-red-600 text-white landing-sticker landing-sticker-press hover:bg-red-700`;
 
 const baseButtonLg =
-  "inline-flex min-h-14 items-center justify-center rounded-2xl border-2 px-7 text-base font-bold transition-[transform,box-shadow,background-color] disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex min-h-14 items-center justify-center rounded-2xl border-2 px-7 text-base font-bold transition-[transform,box-shadow,background-color] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-orange/40 disabled:cursor-not-allowed disabled:opacity-40";
 
 export const primaryButtonLgClass = `${baseButtonLg} border-foreground bg-accent-orange text-white landing-sticker landing-sticker-press hover:bg-accent-orange-hover`;
 export const secondaryButtonLgClass = `${baseButtonLg} border-foreground/15 bg-surface text-foreground landing-sticker-sm landing-sticker-press hover:bg-surface-raised`;
 
 const baseButtonSm =
-  "inline-flex min-h-9 items-center justify-center rounded-xl border-2 px-3 text-xs font-bold transition-[transform,box-shadow,background-color] disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex min-h-9 items-center justify-center rounded-xl border-2 px-3 text-xs font-bold transition-[transform,box-shadow,background-color] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-orange/40 disabled:cursor-not-allowed disabled:opacity-40";
 
 export const primaryButtonSmClass = `${baseButtonSm} border-foreground/85 bg-accent-orange text-white hover:bg-accent-orange-hover`;
 export const secondaryButtonSmClass = `${baseButtonSm} border-foreground/15 bg-surface text-foreground hover:bg-surface-raised`;

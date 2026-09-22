@@ -17,11 +17,13 @@ export function LoginForm({ nextPath }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    setInfo(null);
     setLoading(true);
     try {
       const supabase = createBrowserSupabaseClient();
@@ -91,6 +93,7 @@ export function LoginForm({ nextPath }: Props) {
             {error}
           </p>
         ) : null}
+        {info ? <p role="status" className="text-sm font-medium text-foreground-secondary">{info}</p> : null}
       </div>
 
       <button
@@ -100,6 +103,53 @@ export function LoginForm({ nextPath }: Props) {
       >
         {loading ? "Signing in..." : "Sign in"}
       </button>
+
+      <div className="flex flex-wrap gap-3 text-sm">
+        <button
+          type="button"
+          className="font-bold underline-offset-4 hover:underline"
+          disabled={loading}
+          onClick={async () => {
+            setError(null);
+            setInfo(null);
+            if (!email.trim()) {
+              setError("Enter your email first.");
+              return;
+            }
+            const supabase = createBrowserSupabaseClient();
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+              redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+            });
+            if (resetError) setError(mapSupabaseAuthErrorMessage(resetError.message, "Could not send reset email."));
+            else setInfo("Password reset email sent. Check your inbox.");
+          }}
+        >
+          Forgot password?
+        </button>
+        <button
+          type="button"
+          className="font-bold underline-offset-4 hover:underline"
+          disabled={loading}
+          onClick={async () => {
+            setError(null);
+            setInfo(null);
+            if (!email.trim()) {
+              setError("Enter your email first.");
+              return;
+            }
+            const supabase = createBrowserSupabaseClient();
+            const { error: resendError } = await supabase.auth.resend({
+              type: "signup",
+              email: email.trim(),
+              options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/account` },
+            });
+            if (resendError) setError(mapSupabaseAuthErrorMessage(resendError.message, "Could not resend confirmation."));
+            else setInfo("Confirmation email sent. Check your inbox.");
+          }}
+        >
+          Resend confirmation
+        </button>
+      </div>
     </form>
   );
 }

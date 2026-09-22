@@ -11,7 +11,7 @@ Unless noted, actions require a signed-in user; otherwise they return `unauthori
 
 ## Read actions (Play + Results + Account)
 
-### `getMyGameState()`
+### `getMyGameState(groupId?)`
 
 **Parameters:** none.
 
@@ -31,7 +31,7 @@ Unless noted, actions require a signed-in user; otherwise they return `unauthori
 
 **`MyGameRevealedDetail`:** `roundNumber`, `pickerId`, `roster` (`GameResultsRosterRow[]`), `reviews` as `{ userId, rating, reviewText }[]` (`reviewText` may be `""`; newlines preserved).
 
-**`GroupRosterRow`:** `userId`, `joinedAt` (ISO string from DB), `playerOrder`, `email`, `displayName` (`null` until set in `profiles`).
+**`GroupRosterRow`:** `userId`, `joinedAt` (ISO string from DB), `playerOrder`, and `displayName`. Peer email is intentionally omitted.
 
 **Used by:** `/play` — overall lobby / round / host / reviewer state + group roster list.
 
@@ -43,7 +43,7 @@ Unless noted, actions require a signed-in user; otherwise they return `unauthori
 
 **Parameters:** optional `gameId: string`. When omitted, resolves the caller's latest game in their most recently joined group. When provided, loads that specific game if RLS allows the caller to read it.
 
-Without `gameId`, resolves **the same "my latest group" + "latest game in that group"** as `getMyGameState` (via `group_members` → `groups` → `games` ordered by `created_at` desc). `/results?game=<uuid>` passes `gameId` so account-history links render and share the scoped game instead of the default latest game.
+Without `gameId`, resolves the selected `groupId` (or newest membership when omitted) and that group's latest game. `/results?game=<uuid>` scopes history links to a specific game.
 
 **Success `data` shape (`GameResultsData`):**
 
@@ -54,7 +54,7 @@ Without `gameId`, resolves **the same "my latest group" + "latest game in that g
 | `viewerDisplayName` | `string \| null` | Same as `getMyGameState`. |
 | `group` | `{ name, inviteCode } \| null` | Group for results; `null` if not in a group. If there is a group but no game, `group` is still set and `game` / `rounds` are empty. |
 | `game` | `{ id, status, currentRound, maxRounds } \| null` | Latest game when present. |
-| `roster` | `GameResultsRosterRow[]` | From `game_members`: `userId`, `playerOrder` (0-based), `email`, `displayName` (via `get_game_member_emails`). Sorted by `playerOrder`. |
+| `roster` | `GameResultsRosterRow[]` | From `game_members`: `userId`, `playerOrder` (0-based), and `displayName`. Sorted by `playerOrder`; peer email is omitted. |
 | `rounds` | `GameResultsRound[]` | Only rounds with `status === "revealed"`, ordered by `round_number` ascending. |
 
 **`GameResultsRound` per row:**
@@ -70,7 +70,7 @@ Without `gameId`, resolves **the same "my latest group" + "latest game in that g
 
 **Used by:** `/results` — revealed rounds only; empty `rounds` if none revealed yet.
 
-**Data access:** RLS-scoped `SELECT` on `games`, `game_members`, `rounds`, `reviews`, `profiles` (viewer). Calls `get_game_member_emails` RPC to add `email` and `displayName` to roster rows.
+**Data access:** RLS-scoped reads plus membership-checking roster RPCs. Public roster DTOs contain display names and stable player order only; peer account emails are never returned.
 
 ---
 
@@ -196,21 +196,21 @@ Reviews:
 
 ## Round lifecycle
 
-### `startNextRound(gameId: string)`
+### `advanceGame(gameId: string)`
 
-- **Returns:** `{ roundId: string }` on success.
-- **Backend:** RPC `start_next_round` (reveals current round if `awaiting_reviews`, then creates next round).
+- **Returns:** `{ roundId: string | null, revealedRoundId: string | null, completed: boolean }` on success.
+- **Backend:** RPC `advance_game`; it reveals an awaiting-review round and either creates the next round or completes the game at the limit.
 
 ### `submitAlbum(gameId, albumName, artistName, albumUrl, spotifyAlbumId?, albumCoverUrl?)`
 
 - **Returns:** `{ roundId: string }` on success.
-- **Validation:** trimmed album and artist names required; else `invalid_input`. `albumUrl` is optional, but when present it must be a valid absolute `http://` or `https://` URL; otherwise `invalid_album_url`. Optional `spotifyAlbumId` must match `[A-Za-z0-9]{10,64}` when provided. Optional `albumCoverUrl` must be a valid absolute `https://` URL when provided; otherwise `invalid_cover_url`.
+- **Validation:** album and artist are required and limited to 200 characters. `albumUrl` must be absolute HTTP(S). Optional Spotify ids are validated, and cover art must use `https://i.scdn.co/image/...`.
 - **Backend:** RPC `submit_album` (DB also rejects unsafe / malformed `album_url` and `album_cover_url` values).
 
 ### `submitReview(roundId: string, rating: number, reviewText: string)`
 
 - **Returns:** `{ revealed: boolean }` on success — `true` if the round's status is `revealed` after the RPC (e.g. last review triggered reveal).
-- **Validation:** `rating` must be finite; else `invalid_rating`.
+- **Validation:** `rating` must be finite; review text is limited to 5,000 characters.
 - **Backend:** RPC `submit_review`; then a follow-up `SELECT` on `rounds.status` for the returned `revealed` flag.
 
 ---

@@ -25,12 +25,17 @@ export function SignupForm() {
       const supabase = createBrowserSupabaseClient();
       const origin = window.location.origin;
       const metaName = displayName.trim();
+      if (!metaName) {
+        setError("Display name is required for gameplay.");
+        setLoading(false);
+        return;
+      }
       const { error: signError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${origin}/auth/callback?next=/account`,
-          data: metaName ? { display_name: metaName } : undefined,
+          data: { display_name: metaName },
         },
       });
       if (signError) {
@@ -58,11 +63,12 @@ export function SignupForm() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
       <label className="flex flex-col gap-2 text-sm font-bold">
-        <span className="text-foreground">Display name (optional)</span>
+        <span className="text-foreground">Display name</span>
         <input
           name="displayName"
           type="text"
           autoComplete="nickname"
+          required
           maxLength={80}
           value={displayName}
           onChange={(event) => setDisplayName(event.target.value)}
@@ -91,7 +97,7 @@ export function SignupForm() {
           type="password"
           autoComplete="new-password"
           required
-          minLength={6}
+          minLength={8}
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           className={inputClass}
