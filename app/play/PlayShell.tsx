@@ -1032,7 +1032,7 @@ export function PlayShell({ initialState, spotifyEnabled }: Props) {
                         className={cx(
                           "min-h-12 rounded-xl border-2 px-3 py-2 text-sm font-bold transition-[transform,box-shadow,background-color]",
                           isSelected
-                            ? "border-foreground bg-accent-orange text-white landing-sticker-sm"
+                            ? "border-foreground bg-accent-orange text-gray-950 landing-sticker-sm"
                             : "border-foreground/15 bg-surface text-foreground hover:bg-surface-raised"
                         )}
                         onClick={() => setRating(String(value))}

@@ -34,7 +34,7 @@ export const textareaClass =
 const baseButton =
   "inline-flex min-h-12 items-center justify-center rounded-2xl border-2 px-6 text-sm font-bold transition-[transform,box-shadow,background-color,color] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-orange/40 disabled:cursor-not-allowed disabled:opacity-40";
 
-export const primaryButtonClass = `${baseButton} border-foreground bg-accent-orange text-white landing-sticker landing-sticker-press hover:bg-accent-orange-hover`;
+export const primaryButtonClass = `${baseButton} border-foreground bg-accent-orange text-gray-950 landing-sticker landing-sticker-press hover:bg-accent-orange-hover`;
 export const secondaryButtonClass = `${baseButton} border-foreground/15 bg-surface text-foreground landing-sticker-sm landing-sticker-press hover:bg-surface-raised`;
 export const ghostButtonClass = `${baseButton} border-transparent bg-transparent text-foreground hover:bg-surface-raised`;
 export const destructiveButtonClass = `${baseButton} border-foreground bg-red-600 text-white landing-sticker landing-sticker-press hover:bg-red-700`;
@@ -42,13 +42,13 @@ export const destructiveButtonClass = `${baseButton} border-foreground bg-red-60
 const baseButtonLg =
   "inline-flex min-h-14 items-center justify-center rounded-2xl border-2 px-7 text-base font-bold transition-[transform,box-shadow,background-color] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-orange/40 disabled:cursor-not-allowed disabled:opacity-40";
 
-export const primaryButtonLgClass = `${baseButtonLg} border-foreground bg-accent-orange text-white landing-sticker landing-sticker-press hover:bg-accent-orange-hover`;
+export const primaryButtonLgClass = `${baseButtonLg} border-foreground bg-accent-orange text-gray-950 landing-sticker landing-sticker-press hover:bg-accent-orange-hover`;
 export const secondaryButtonLgClass = `${baseButtonLg} border-foreground/15 bg-surface text-foreground landing-sticker-sm landing-sticker-press hover:bg-surface-raised`;
 
 const baseButtonSm =
   "inline-flex min-h-9 items-center justify-center rounded-xl border-2 px-3 text-xs font-bold transition-[transform,box-shadow,background-color] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-accent-orange/40 disabled:cursor-not-allowed disabled:opacity-40";
 
-export const primaryButtonSmClass = `${baseButtonSm} border-foreground/85 bg-accent-orange text-white hover:bg-accent-orange-hover`;
+export const primaryButtonSmClass = `${baseButtonSm} border-foreground/85 bg-accent-orange text-gray-950 hover:bg-accent-orange-hover`;
 export const secondaryButtonSmClass = `${baseButtonSm} border-foreground/15 bg-surface text-foreground hover:bg-surface-raised`;
 export const destructiveButtonSmClass = `${baseButtonSm} border-foreground/85 bg-red-600 text-white hover:bg-red-700`;
 
@@ -96,7 +96,7 @@ export function toneBadgeClass(tone: Tone): string {
     "inline-flex items-center rounded-full border-2 border-foreground/85 px-3 py-1 text-xs font-bold";
   switch (tone) {
     case "orange":
-      return `${base} bg-accent-orange text-white`;
+      return `${base} bg-accent-orange text-gray-950`;
     case "yellow":
       return `${base} bg-accent-yellow text-accent-yellow-fg`;
     case "green":

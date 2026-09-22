@@ -9,7 +9,7 @@ async function signUp(page: Page, name: string, email: string) {
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign up" }).click();
-  await expect(page.getByRole("status")).toContainText("Check your email");
+  await expect(page.getByRole("heading", { name: "You're already signed in." })).toBeVisible();
   await page.goto("/play");
   await expect(page).toHaveURL(/\/play/);
 }
@@ -53,7 +53,7 @@ test("two browser contexts complete a round and keep the selected group", async 
   await player.getByLabel("Review (optional)").fill("A complete UAT review.");
   await player.getByRole("button", { name: "Submit review" }).click();
   await expect(player).toHaveURL(/\/results/);
-  await expect(player.getByText("Test Album")).toBeVisible();
+  await expect(player.getByText("Test Album").first()).toBeVisible();
 
   await hostContext.close();
   await playerContext.close();

@@ -65,7 +65,7 @@ export async function SiteHeader() {
               </Link>
               <Link
                 href="/signup"
-                className="rounded-xl border-2 border-foreground bg-accent-orange px-3 py-2 text-white transition-colors hover:bg-accent-orange-hover"
+                className="rounded-xl border-2 border-foreground bg-accent-orange px-3 py-2 text-gray-950 transition-colors hover:bg-accent-orange-hover"
               >
                 Sign up
               </Link>

@@ -132,7 +132,7 @@ export default async function Home() {
                     what happens next.
                   </p>
                 </div>
-                <span className="rounded-full border-2 border-foreground bg-accent-orange px-3 py-1 text-xs font-bold text-white">
+                <span className="rounded-full border-2 border-foreground bg-accent-orange px-3 py-1 text-xs font-bold text-gray-950">
                   Your turn
                 </span>
               </div>

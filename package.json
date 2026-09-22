@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test --test-isolation=none lib/mania/*.test.ts",
+    "test": "node --experimental-strip-types --test --test-isolation=none lib/mania/testSuite.ts",
     "test:e2e": "playwright test",
     "audit:prod": "npm audit --omit=dev --audit-level=high",
     "verify": "npm run lint && npm run typecheck && npm test && npm run build",
