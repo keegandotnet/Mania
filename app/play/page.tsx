@@ -46,7 +46,11 @@ export default async function PlayPage(props: PlayPageProps) {
           </p>
         </header>
 
-        <PlayShell initialState={initialState} spotifyEnabled={spotifyEnabled} />
+        <PlayShell
+          key={initialState.group?.id ?? selectedGroupId ?? "no-group"}
+          initialState={initialState}
+          spotifyEnabled={spotifyEnabled}
+        />
       </section>
     </PageShell>
   );
