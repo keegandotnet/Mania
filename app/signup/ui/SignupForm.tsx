@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { inputClass, primaryButtonLgClass } from "@/app/components/ui";
 import { mapSupabaseAuthErrorMessage } from "@/lib/mania/mapAuthError";
 import { mapClientErrorMessage } from "@/lib/mania/mapClientError";
@@ -9,17 +9,18 @@ import { createBrowserSupabaseClient } from "@/lib/supabaseClient";
 
 export function SignupForm() {
   const router = useRouter();
-  const hydrated = useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false
-  );
+  const [hydrated, setHydrated] = useState(false);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setHydrated(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();

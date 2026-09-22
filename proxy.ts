@@ -5,7 +5,7 @@ import { updateSession } from "@/lib/supabaseProxy";
  * Next.js 16 session refresh at the network boundary (formerly `middleware`).
  * Runs before routes so navigations refresh JWT cookies; server code uses `lib/supabaseServer.ts`.
  *
- * Matcher: skip `_next/static`, `_next/image`, favicon, and common static file extensions.
+ * Matcher: skip all Next.js internals, favicon, and common static file extensions.
  */
 export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
@@ -13,12 +13,14 @@ export async function proxy(request: NextRequest) {
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
-    `style-src 'self' 'nonce-${nonce}'`,
+    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
     "style-src-attr 'unsafe-inline'",
     "img-src 'self' data: blob: https://i.scdn.co",
     "font-src 'self' data:",
     `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.spotify.com https://api.spotify.com${
-      isDev ? " http://127.0.0.1:54321 ws://127.0.0.1:54321" : ""
+      isDev
+        ? " http://127.0.0.1:54321 ws://127.0.0.1:54321 ws://127.0.0.1:3000 ws://localhost:3000"
+        : ""
     }`,
     "object-src 'none'",
     "base-uri 'self'",
@@ -37,6 +39,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
