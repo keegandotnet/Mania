@@ -52,8 +52,8 @@ test("two browser contexts complete a round and keep the selected group", async 
   await expect(host.getByText("2 members")).toBeVisible();
   await host.getByRole("button", { name: "Create game" }).click();
   await host.getByRole("button", { name: "Start round" }).click();
-  await host.getByLabel("Album").fill("Test Album");
-  await host.getByLabel("Artist").fill("Test Artist");
+  await host.getByRole("combobox", { name: "Album", exact: true }).fill("Test Album");
+  await host.getByLabel("Artist", { exact: true }).fill("Test Artist");
   await host.getByRole("button", { name: "Submit album" }).click();
 
   await player.reload();
