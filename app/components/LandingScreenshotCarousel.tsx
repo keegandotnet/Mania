@@ -263,6 +263,8 @@ export function LandingScreenshotCarousel() {
 
       <div
         ref={carouselRef}
+        tabIndex={0}
+        aria-label="Product preview panels"
         onScroll={(event) => {
           const container = event.currentTarget;
           const panelWidth = container.firstElementChild?.clientWidth ?? 1;

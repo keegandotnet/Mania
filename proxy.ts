@@ -17,7 +17,9 @@ export async function proxy(request: NextRequest) {
     "style-src-attr 'unsafe-inline'",
     "img-src 'self' data: blob: https://i.scdn.co",
     "font-src 'self' data:",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.spotify.com https://api.spotify.com",
+    `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://accounts.spotify.com https://api.spotify.com${
+      isDev ? " http://127.0.0.1:54321 ws://127.0.0.1:54321" : ""
+    }`,
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
