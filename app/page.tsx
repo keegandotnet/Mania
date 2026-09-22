@@ -149,7 +149,7 @@ export default async function Home() {
                   </div>
                   <div className="min-w-0 text-left">
                     <p className="text-xl font-black tracking-tight">Sawayama</p>
-                    <p className="text-sm text-foreground-secondary">
+                    <p className="text-sm text-foreground">
                       Rina Sawayama
                     </p>
                   </div>
@@ -172,7 +172,7 @@ export default async function Home() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-6 rounded-2xl border-2 border-accent-orange/40 bg-accent-orange/15 p-4 text-left text-sm font-bold text-accent-orange-fg">
+              <p className="mt-6 rounded-2xl border-2 border-accent-orange/40 bg-accent-orange/15 p-4 text-left text-sm font-bold text-foreground">
                 Reviews stay hidden until everyone has played their turn.
               </p>
             </div>
