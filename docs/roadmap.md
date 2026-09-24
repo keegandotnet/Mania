@@ -1,6 +1,30 @@
 # Roadmap
 
-## Phase 1 (current) — Core gameplay
+## Current priority - Approved UI overhaul
+
+**Design approved September 24, 2026. Implementation is next and has not started.**
+
+The canonical implementation specification is [UI Overhaul](../UI%20Overhaul.md), with the [approved 12-page visual proposal](../output/pdf/Mania%20UI%20Redesign%20Proposal.pdf). The next agent should implement that complete handoff, preserving the existing game rules, authentication, external listening and server permissions.
+
+- [x] Audit current routes, actions, state/role behavior and sources of Play overload.
+- [x] Produce and visually validate the 12-page proposal, including phone/desktop mockups and edge-state guidance.
+- [x] User review and approval of the design direction.
+- [x] Package the implementation instructions, action inventory and acceptance criteria in one handoff.
+- [ ] Shared visual primitives: Geist and existing colors, quieter surfaces, restrained sticker shadows, artwork emphasis and plain copy.
+- [ ] Navigation: compact group switcher, remembered valid selection, scoped links/auth returns and a secondary Group destination.
+- [ ] Play: picking, reviewing, submitted, picker waiting, awaiting album, revealed and completed states; persistent artwork/listening after submission.
+- [ ] Group/host controls: roster/invites/setup, locked round limit, auto-advance and accurate early-close confirmation with existing permissions.
+- [ ] Public/returning homepages: prominent Start/Resume record, immediate current-group next action, reduced-motion behavior.
+- [ ] Results: latest album score and friends' reviews first; earlier rounds, standings, statistics and copied summaries remain available.
+- [ ] Supporting flows: account settings, all game history, auth recovery, late joiners and safe leave-group behavior.
+- [ ] Validate the full lifecycle, role restrictions, selected-group continuity, narrow phones, long content, failures, keyboard access and light/dark contrast.
+- [ ] Update design/UX/testing documentation and record implementation evidence before marking the overhaul shipped.
+
+Implementation checkpoints are one coherent approved product vertical, not separate proposals. Manual refresh remains the baseline. Automatic polling, cross-visit drafts, new public APIs, playback, analytics and backend rule changes are not included. Verify aggregate review progress under RLS without exposing hidden reviews; disclose any contract gap rather than fabricating totals.
+
+Historical phases below record completed work. Their thick-panel styling and marketing-copy choices are superseded by the approved overhaul where they conflict; their functionality remains supported.
+
+## Phase 1 — Core gameplay baseline
 
 - ✅ Groups with invite codes (max 6 players)
 - ✅ Turn-based album submission
@@ -9,8 +33,8 @@
 - ✅ Round limit with per-player minimum; locked after first round
 - ✅ Auto-advance option between rounds
 - ✅ Per-round results with color-coded scores
-- ✅ Auto-navigate to Results after each round
-- ✅ Email-based player identification
+- ✅ Client results navigation after detected reveal; manual refresh remains available (not automatic synchronization across every client)
+- ✅ Account identity with safe player-label fallbacks
 - ✅ Display names / user profiles
 - ✅ Group management on /account (leave group, view invite codes)
 - ✅ Export / share-friendly results summary
@@ -51,8 +75,10 @@ A public-facing `/` that explains what Mania is, with clear CTAs (sign up / sign
 
 ## Phase 3.6 — Product screenshots + Play simplification
 
-- Next: replace landing placeholder panels with real screenshots from the current product surfaces.
-- Next: simplify `/play` so the primary next action is obvious, with a gamey/fun surface that reduces navigation hunting and visual busywork.
+**Superseded by the approved UI overhaul above.** The new scope includes navigation, all gameplay states, public/returning homepages, Results, Group and Account support.
+
+- The simpler approved public homepage does not require the old screenshot carousel. If screenshots are retained, capture sanitized examples of the redesigned product after implementation.
+- Preserve the original aim: make the next action obvious and reduce navigation hunting and visual overload on Play.
 
 ## Phase 4 — Analytics
 

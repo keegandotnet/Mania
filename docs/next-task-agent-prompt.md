@@ -1,70 +1,19 @@
-# Agent task: Real product screenshots and Play UI simplification
+# Next task: Implement the approved Mania UI overhaul
 
-Per [`.cursor/rules/NEXT-AGENT-TASK.mdc`](../.cursor/rules/NEXT-AGENT-TASK.mdc): when you complete a task, post the **next-agent copy-paste prompt** and a **3–5 word title** for the work you just did **in the agent chat**, not in this file. Update this document only with the **substantive task** the next agent should execute after open work is finished.
+## Status
 
----
+The user approved the 12-page proposal on September 24, 2026 and requested an implementation handoff for another agent. Design and handoff are complete. Application implementation has not started.
 
-## Context (2026-07-02)
+## Authoritative task
 
-- Core gameplay, sticker UI, results sharing, account/group management, Spotify album autocomplete with persisted cover art, and auth-aware navigation/entry CTAs are implemented.
-- Before starting this next vertical, validate the auth-aware navigation change on branch `cursor/auth-nav-polish-a65c`; if it looks good in the frontend, proceed with PR review/merge for that auth polish work.
-- The landing page still uses placeholder/screenshot-style app panels. The user wants those replaced with real screenshots from the current product.
-- The user also wants `/play` simplified. Current feedback: the Play UI feels busy and makes it hard to manage navigation / find the next play action.
-- Desired direction: simple, gamey, and fun. The page should not feel like a hunt for the "play" button.
+Read and execute [UI Overhaul](../UI%20Overhaul.md). That single document contains the full scope, visual reference links, navigation contract, screen specifications, role/state matrix, preserved actions, implementation checkpoints and acceptance criteria. Use the [approved proposal PDF](../output/pdf/Mania%20UI%20Redesign%20Proposal.pdf) as the visual target.
 
----
+Ship the approved overhaul as one coherent product vertical. The checkpoints organize that work; they do not limit it to a homepage or a partial Play restyle. Preserve backend rules and existing functionality. Do not repeat the completed design-discovery process or follow the archived design-only stop instructions in `UI Overhaul.txt`.
 
-## Goal (one vertical)
+Follow `AGENTS.md`, the installed Next.js documentation and [the repository handoff workflow](../.cursor/rules/NEXT-AGENT-TASK.mdc). The user has already selected and approved this scope, so no new feature-selection discussion is necessary. Work on a dedicated implementation branch and preserve unrelated changes.
 
-Replace landing placeholder panels with real product screenshots and simplify `/play` around an obvious primary action:
+## Completion
 
-1. Create real product screenshots from the current app, preferably covering Play, Results, and Account/group management states.
-2. Replace landing placeholder panels/carousel content with those real screenshots or screenshot-backed panels.
-3. Audit `app/play` and `app/play/PlayShell.tsx` for visual hierarchy problems, duplicated actions, and hard-to-find next steps.
-4. Redesign `/play` so the player's immediate next action is prominent for each state: create/join group, create game, start round, submit album, submit review, wait, view reveal, or game over.
-5. Preserve the sticker/friendly-brutalist design language, Spotify autocomplete behavior, host controls, auto-advance, round-limit rules, and protected-route auth behavior.
-6. Update `docs/roadmap.md`, `docs/testing.md`, and `docs/ux.md` or `docs/design.md` with the new Play/screenshot expectations.
+Use the acceptance checklist in `UI Overhaul.md`, including real frontend inspection and meaningful lifecycle/permission tests. Update `docs/design.md`, `docs/ux.md`, `docs/testing.md` and `docs/roadmap.md` to reflect what actually ships. Explicitly report environment blockers or conditional data-contract limitations; do not claim static mockups prove production behavior.
 
-Do not add analytics, public share links, new auth providers, new database schema, or broad navigation/product-scope changes in this task unless required by the Play simplification.
-
----
-
-## Files likely touched
-
-- `app/page.tsx`
-- `app/components/LandingScreenshotCarousel.tsx`
-- `app/play/page.tsx`
-- `app/play/PlayShell.tsx`
-- `app/play/*` form/control components
-- screenshot assets under `public/` if committed as static images
-- `app/results/page.tsx`
-- `docs/roadmap.md`
-- `docs/testing.md`
-- `docs/ux.md`
-- `docs/design.md`
-
----
-
-## Done criteria
-
-- [ ] Landing page no longer relies on placeholder/synthetic app panels when real product screenshots are available.
-- [ ] Screenshots are reproducible or documented enough that future agents can regenerate them.
-- [ ] `/play` has one obvious primary action for each major game state.
-- [ ] Secondary navigation/actions are still available but visually subordinate.
-- [ ] Spotify autocomplete, manual album fallback, review submission, host controls, and reveal/game-over states still work.
-- [ ] Mobile layout stays easy to scan and does not hide the primary action below excessive chrome.
-- [ ] Docs and manual testing checklist cover screenshot replacement and simplified Play flows.
-- [ ] `npm run lint` and `npm run build` pass.
-
-## Decisions already made (for future agents)
-
-- **Screenshot ownership:** it is okay for the agent to create screenshots if the app can be run locally with available env/test data; otherwise document the exact missing data/env blocker and use the best static product panels possible.
-- **Play hierarchy:** optimize around the user asking "what do I do now?" before exposing supporting details.
-- **Visual consistency:** keep the existing sticker UI primitives, colors, borders, hard shadows, and playful tone.
-- **Scope control:** this is not the analytics phase; do not build stats dashboards as part of the Play cleanup.
-
-## Risks
-
-- Real screenshots may require representative seed data, hosted Supabase credentials, or a local Supabase reset before capture.
-- Simplifying `/play` can accidentally hide host-only controls or less common states; preserve access while changing hierarchy.
-- Avoid screenshots that embed private user emails, invite codes, or other sensitive live data.
+The previous screenshot-only/Play-simplification brief and old branch-review dependency are superseded. Do not merge an old branch or change a live database based on that archived brief. The user controls Git publication and review.

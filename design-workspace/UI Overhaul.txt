@@ -1,0 +1,200 @@
+ARCHIVED ORIGINAL DESIGN BRIEF - September 24, 2026
+
+The design phase below is complete and the user approved the PDF proposal.
+Read UI Overhaul.md for the authoritative implementation handoff.
+Do not restart the questions/proposal phases or apply the old design-only stop
+instructions below to the approved implementation task. This original brief
+is retained for reference.
+
+---
+
+You are acting as the lead product designer and frontend UX architect for **Mania**, an existing music-based game.
+
+The application already works. This is **not** a rebuild and you should **not modify the production application yet**.
+
+Your job in this phase is to understand the existing product, challenge the current UI/UX, and develop a proposed redesign that can later be implemented into the existing application.
+
+## Primary objective
+
+Mania needs a substantial frontend/UI overhaul.
+
+The current application exposes too much information and too many controls to the user at once. I want the redesign to feel:
+
+- Simpler
+- More intuitive
+- More playful/game-like
+- Music-centric
+- Visually distinctive
+- Polished enough to feel like an actual game/product rather than a utility or dashboard
+
+The goal is **not** to remove useful functionality. Instead, improve hierarchy, progressive disclosure, navigation, and interaction patterns so that users only see what matters when they need it.
+
+I want the design to have personality, but avoid turning it into an overly busy "gaming UI."
+
+One specific concept I already like is having a **vinyl record spinning on the homepage**, potentially as part of the main hero/game-start experience. Think about how motion, album artwork, records, turntables, music playback, scoring, transitions, etc. could contribute to the identity of Mania without becoming gimmicky.
+
+## Phase 1 — Crawl and understand the existing application
+
+Before proposing designs, thoroughly inspect the repository.
+
+Do not assume you understand the product from filenames alone.
+
+Trace the actual application structure and determine:
+
+- Existing routes/pages/screens
+- Primary user flows
+- Purpose of each page
+- Major actions available on each page
+- Shared layouts and navigation
+- Existing components
+- Current design system/styles/theme
+- Existing assets
+- Important stateful interactions
+- Modals, dialogs, menus, overlays, etc.
+- Mobile/responsive behavior if present
+- Which functionality is frontend-only versus dependent on backend/API behavior
+
+Follow imports, routing, components, and application logic where necessary to understand how users actually interact with Mania.
+
+Do not modify anything during this phase.
+
+## Phase 2 — Current-state UX map
+
+Create a concise map of the application as it exists today.
+
+For each major page or experience, document:
+
+1. Page/route
+2. Purpose
+3. Primary user action
+4. Secondary actions
+5. Information currently displayed
+6. Major UI/UX issues you observe
+7. What should probably remain prominent
+8. What could potentially be hidden, combined, simplified, moved, or revealed progressively
+
+Also identify any functionality that appears duplicated or unnecessarily separated across multiple screens.
+
+Think about Mania as a **game experience**, not simply as a collection of web pages.
+
+## Phase 3 — Develop a redesign direction
+
+Based on the existing functionality, propose a cohesive visual and interaction direction for Mania.
+
+Consider:
+
+- Overall visual language
+- Information hierarchy
+- Navigation model
+- Game loop
+- Home/start experience
+- Typography
+- Spacing
+- Cards/panels
+- Buttons and controls
+- Music-related visual motifs
+- Album artwork usage
+- Vinyl/record imagery
+- Animation and transitions
+- Score/progression displays
+- Loading states
+- Success/failure/reveal moments
+- Modals and secondary information
+- Responsive behavior
+- Accessibility
+- Reduced-motion behavior
+- How to make the experience feel "gamey" without adding unnecessary clutter
+
+Favor **fewer, stronger interface elements** over many small panels, labels, buttons, stats, or cards.
+
+Where possible, use progressive disclosure instead of showing every option simultaneously.
+
+Do not blindly preserve the current page structure. If several screens should be combined, simplified, or reorganized, propose that.
+
+At the same time, do not invent major new product functionality solely to make the UI more interesting.
+
+## Homepage concept
+
+Give special attention to the homepage.
+
+I am interested in a prominent animated **spinning vinyl record** as part of the experience.
+
+Explore how that could function as more than decoration—for example as part of the visual identity, game-start interaction, currently playing state, loading transition, album artwork presentation, or navigation into a game.
+
+The animation should feel polished and intentional rather than flashy.
+
+## Phase 4 — Ask me questions
+
+After inspecting the application and developing your preliminary direction, ask me any questions where my answer could materially change the design.
+
+Focus on consequential questions such as:
+
+- Intended player behavior
+- Most important game loop
+- Features I care about most
+- Features users rarely need
+- Desired personality or aesthetic
+- Inspirations
+- Target devices
+- Whether certain information needs to remain visible
+- Areas where the current UI particularly bothers me
+
+Do not ask questions whose answers can already be discovered from the repository.
+
+Present your findings and questions to me and **STOP THERE**.
+
+Do not implement the redesign yet.
+
+## Phase 5 — Design proposal PDF
+
+After I answer your questions, your next deliverable will be a polished **Mania UI Redesign Proposal PDF**.
+
+The PDF should function like a lightweight product-design presentation rather than a long technical report.
+
+It should include:
+
+- Current-state summary
+- Key UX problems
+- Proposed design principles
+- Proposed information architecture/navigation
+- Proposed visual direction
+- Typography/style recommendations
+- Component/interface patterns
+- Motion/animation direction
+- Homepage concept
+- Spinning-record concept
+- Before/after reasoning for major simplifications
+- Proposed treatment of the major existing screens
+- Any recommended consolidation of pages or functionality
+
+Most importantly, include **visual sample pages/mockups based on actual pages and functionality discovered in this repository**.
+
+Do not create generic SaaS mockups.
+
+The sample pages should clearly look like Mania and should represent realistic redesigned versions of the existing application.
+
+At minimum, the visual concepts should cover:
+
+- The homepage
+- The primary gameplay experience
+- Several other representative high-value screens discovered during your audit
+
+Choose the exact screens based on what you find in the repository.
+
+The mockups should be sufficiently detailed that they could serve as a visual reference during frontend implementation—not just boxes-and-labels wireframes.
+
+You may create temporary design/mockup assets or code outside of the production application if useful for generating the proposal, but **do not alter the working application's source code during the design phase**.
+
+## Phase 6 — Future implementation
+
+After I review the PDF, I will decide what direction to pursue.
+
+Only after I explicitly approve the design should you begin changing the application.
+
+The eventual implementation should preserve existing functionality unless we explicitly agree to change it.
+
+For now, concentrate on:
+
+**Understand → Simplify → Design → Ask → Document**
+
+Do not begin coding the redesign.
